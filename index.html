@@ -1,0 +1,2871 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReelKart Theatres — Book Your Seats</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS — ported 1:1 from trial.py's C / F dictionaries
+   ============================================================ */
+:root{
+  --bg:           #08080F;
+  --surface:      #0F0F1E;
+  --card:         #161628;
+  --card2:        #1C1C38;
+  --input-bg:     #1E1E3A;
+  --border:       #2A2A50;
+  --divider:      #18182E;
+  --section-bg:   #12122A;
+
+  --accent:       #E03A50;
+  --accent-h:     #FF4F6B;
+  --accent-d:     #A02838;
+
+  --success:      #22C55E;
+  --success-d:    #16A34A;
+  --danger:       #EF4444;
+  --warn:         #F59E0B;
+  --gold:         #FBBF24;
+  --platinum:     #A78BFA;
+
+  --txt:          #F1F5F9;
+  --txt2:         #94A3B8;
+  --txt3:         #4B5580;
+  --txt-dim:      #2E3A55;
+
+  --seat-avail:   #243050;
+  --seat-avail-h: #32447A;
+  --seat-sel:     #E03A50;
+  --seat-sel-h:   #FF4F6B;
+  --seat-sel-d:   #9A2030;
+  --seat-booked:  #0E0E20;
+  --seat-txt:     #9BB4DC;
+  --seat-txt-sel: #FFFFFF;
+  --seat-txt-bk:  #2C3A55;
+
+  --screen-bg:    #0E2040;
+  --screen-txt:   #60A5FA;
+  --screen-glow:  #0A1830;
+
+  --ff: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --ff-mono: 'Courier New', monospace;
+}
+
+/* ============ Light theme overrides ============ */
+:root[data-theme="light"]{
+  --bg:           #F4F5F9;
+  --surface:      #FFFFFF;
+  --card:         #FFFFFF;
+  --card2:        #F1F3F9;
+  --input-bg:     #F1F3F9;
+  --border:       #E2E5EE;
+  --divider:      #EAEDF5;
+  --section-bg:   #F7F8FC;
+
+  --accent:       #E03A50;
+  --accent-h:     #FF4F6B;
+  --accent-d:     #A02838;
+
+  --success:      #16A34A;
+  --success-d:    #15803D;
+  --danger:       #DC2626;
+  --warn:         #D97706;
+  --gold:         #B45309;
+  --platinum:     #7C3AED;
+
+  --txt:          #0F172A;
+  --txt2:         #475569;
+  --txt3:         #94A3B8;
+  --txt-dim:      #CBD5E1;
+
+  --seat-avail:   #E2E8F5;
+  --seat-avail-h: #C7D2E8;
+  --seat-sel:     #E03A50;
+  --seat-sel-h:   #FF4F6B;
+  --seat-sel-d:   #9A2030;
+  --seat-booked:  #E5E7EB;
+  --seat-txt:     #475569;
+  --seat-txt-sel: #FFFFFF;
+  --seat-txt-bk:  #9CA3AF;
+
+  --screen-bg:    #DCEBFF;
+  --screen-txt:   #2563EB;
+  --screen-glow:  #EFF6FF;
+}
+
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--ff);
+  min-height: 100vh;
+}
+button{ font-family: inherit; }
+input, select{ font-family: inherit; }
+
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background: var(--surface); }
+::-webkit-scrollbar-thumb{ background: var(--card2); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover{ background: var(--border); }
+
+/* ============ Top identity stripe ============ */
+.top-stripe{ height:4px; background: var(--accent); }
+
+/* ============ Header ============ */
+header.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 14px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand .logo{ font-size:22px; }
+.brand h1{ font-size:18px; font-weight:800; margin:0; letter-spacing:.3px; }
+.city-pill{
+  display:flex; align-items:center; gap:6px; margin-left:10px;
+  background: var(--card2); border:1px solid var(--border); border-radius:20px;
+  padding:6px 14px; color: var(--txt2); font-size:12px; font-weight:700;
+  cursor:pointer; transition: all .12s ease;
+}
+.city-pill:hover{ border-color: var(--accent); color: var(--txt); }
+.city-chevron{ font-size:10px; color: var(--txt3); }
+.nav-actions{ display:flex; gap:10px; align-items:center; }
+.nav-username{ font-size:13px; color: var(--txt2); margin-right:2px; }
+
+.theme-toggle{
+  width:36px; height:36px; border-radius:50%; border:1px solid var(--border);
+  background: var(--card2); cursor:pointer; font-size:15px;
+  display:flex; align-items:center; justify-content:center; margin-right:6px;
+  transition: all .15s ease;
+}
+.theme-toggle:hover{ border-color: var(--accent); }
+
+.btn{
+  border:0; border-radius:8px; cursor:pointer;
+  font-weight:700; font-size:13px; padding:10px 18px;
+  background: var(--accent); color: var(--txt);
+  transition: background .15s ease;
+}
+.btn:hover{ background: var(--accent-h); }
+.btn.secondary{ background: var(--card2); color: var(--txt2); }
+.btn.secondary:hover{ background: var(--border); }
+.btn.ghost{ background: transparent; color: var(--txt2); border:1px solid var(--border); }
+.btn.ghost:hover{ background: var(--card2); }
+.btn.danger{ background: var(--card2); color: var(--danger); }
+.btn.danger:hover{ background: #3A1A1A; }
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+.btn.small{ padding:7px 12px; font-size:12px; }
+
+/* ============ Layout ============ */
+.layout{
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap: 22px;
+  padding: 22px 28px 60px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+@media (max-width: 980px){
+  .layout{ grid-template-columns: 1fr; }
+}
+
+/* ============ Seat panel ============ */
+.seat-panel{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  min-height: 560px;
+}
+.selectors{
+  display:flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field label{
+  font-size:10px; text-transform:uppercase; letter-spacing:.8px; color: var(--txt3);
+}
+.field select{
+  background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:9px 12px; min-width:220px; font-size:13px;
+  outline: none;
+}
+.field select:focus{ border-color: var(--accent); }
+
+.canvas-wrap{
+  overflow-x:auto;
+  border-radius: 10px;
+  background: var(--section-bg);
+  padding: 10px 0 4px;
+  position: relative;
+}
+#seatCanvas{ display:block; margin: 0 auto; cursor: default; }
+
+.seat-tooltip{
+  position: absolute; pointer-events: none; z-index: 5;
+  background: #0A0A18; border:1px solid var(--border); border-radius:8px;
+  padding: 7px 12px; font-size:12px; font-weight:700; color: var(--txt);
+  white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,.5);
+  opacity: 0; transform: translate(-50%, -100%) translateY(-8px);
+  transition: opacity .1s ease;
+}
+.seat-tooltip.show{ opacity: 1; }
+.seat-tooltip .price{ color: var(--success); }
+.seat-tooltip .booked-tag{ color: var(--danger); }
+
+.legend{
+  display:flex; gap:20px; justify-content:center; margin-top:14px; flex-wrap:wrap;
+}
+.legend .item{ display:flex; align-items:center; gap:8px; font-size:12px; color: var(--txt2); }
+.legend .swatch{ width:16px; height:16px; border-radius:4px; }
+
+.hint{ text-align:center; color: var(--txt3); font-size:12px; margin-top:10px; }
+
+.hold-timer-banner{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background: rgba(245,158,11,.12); border:1px solid var(--warn); color: var(--warn);
+  border-radius:8px; padding:9px 14px; margin-top:12px; font-size:12px; font-weight:700;
+}
+.hold-timer-banner.urgent{
+  background: rgba(239,68,68,.12); border-color: var(--danger); color: var(--danger);
+  animation: hold-pulse 1s ease-in-out infinite;
+}
+@keyframes hold-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.6; } }
+
+/* ============ Sidebar ============ */
+.sidebar{ display:flex; flex-direction:column; gap:16px; }
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+}
+.card h3{
+  font-size:12px; text-transform:uppercase; letter-spacing:.8px;
+  color: var(--txt3); margin:0 0 12px;
+}
+.ticket-types{ display:flex; gap:8px; }
+.ttype{
+  flex:1; text-align:center; padding:10px 6px 9px; border-radius:10px;
+  border:1px solid var(--border); border-top-width:3px; background: var(--input-bg); cursor:pointer;
+  transition: all .12s ease;
+}
+.ttype .icon{ font-size:15px; margin-bottom:2px; }
+.ttype .name{ font-size:12px; font-weight:800; color: var(--txt); }
+.ttype .price{ font-size:11px; color: var(--txt2); margin-top:2px; }
+.ttype.active{ background: var(--card2); }
+.ttype.active .name{ color: var(--type-color, var(--accent-h)); }
+.ttype{ border-top-color: var(--type-color, var(--border)); }
+.ttype.active{ border-color: var(--type-color, var(--accent)); }
+
+.chips{ display:flex; flex-wrap:wrap; gap:8px; min-height: 30px; }
+.chip{
+  background: var(--accent); color:#fff; padding:5px 12px; border-radius:6px;
+  font-size:12px; font-weight:800; font-family: var(--ff-mono);
+}
+.chip.empty{ background:none; color: var(--txt3); font-family: var(--ff); font-weight:400; font-size:12px; }
+.chip.clickable{ cursor:pointer; background: var(--card2); color: var(--txt); border:1px solid var(--border); font-family: var(--ff); font-weight:600; }
+.chip.clickable:hover{ border-color: var(--accent); color: var(--accent-h); }
+
+/* ============ F&B add-ons ============ */
+.addon-list{ display:flex; flex-direction:column; gap:10px; }
+.addon-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 2px; border-bottom:1px solid var(--divider);
+}
+.addon-row:last-child{ border-bottom:none; }
+.addon-info{ display:flex; align-items:center; gap:9px; min-width:0; }
+.addon-icon{ font-size:18px; flex-shrink:0; }
+.addon-name{ font-size:12px; font-weight:700; color: var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.addon-price{ font-size:11px; color: var(--txt3); margin-top:1px; }
+.addon-stepper{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.addon-stepper button{
+  width:24px; height:24px; border-radius:6px; border:1px solid var(--border);
+  background: var(--input-bg); color: var(--txt); font-size:14px; font-weight:800;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.addon-stepper button:hover{ border-color: var(--accent); color: var(--accent-h); }
+.addon-stepper button:disabled{ opacity:.3; cursor:not-allowed; }
+.addon-stepper .qty{ font-size:13px; font-weight:800; min-width:16px; text-align:center; }
+
+.form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-grid .full{ grid-column: 1 / -1; }
+.form-grid label{
+  font-size:10px; text-transform:uppercase; letter-spacing:.6px; color: var(--txt3); display:block; margin-bottom:5px;
+}
+.form-grid input, .form-grid select{
+  width:100%; background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:9px 10px; font-size:13px; outline:none;
+}
+.form-grid input:focus, .form-grid select:focus{ border-color: var(--accent); }
+
+.total-row{
+  display:flex; align-items:center; justify-content:space-between;
+  background: var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:16px 18px; margin-top:6px;
+}
+.total-row .lbl{ font-size:11px; color: var(--txt2); text-transform:uppercase; letter-spacing:.8px; }
+.total-row .amt{ font-size:26px; font-weight:800; color: var(--success); }
+.total-row .amt span{ font-size:15px; margin-right:2px; }
+
+.error-msg{
+  color: var(--danger); font-size:12px; margin-top:8px; min-height:16px;
+}
+.success-msg{ color: var(--success); font-size:12px; margin-top:8px; }
+
+/* ============ Modals ============ */
+.overlay{
+  position: fixed; inset:0; background: rgba(4,4,10,.72);
+  display:none; align-items:center; justify-content:center; z-index: 100;
+  padding: 20px;
+}
+.overlay.show{ display:flex; }
+.modal{
+  background: var(--bg); border:1px solid var(--border); border-radius:14px;
+  width: 100%; max-width: 480px; max-height: 86vh; overflow-y:auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.7);
+}
+.modal.wide{ max-width: 920px; }
+.modal-hdr{
+  padding: 20px 24px 6px; display:flex; align-items:center; justify-content:space-between;
+}
+.modal-hdr h2{ font-size:17px; margin:0; }
+.modal-hdr .x{ cursor:pointer; color: var(--txt3); font-size:20px; background:none; border:none; }
+.modal-hdr .x:hover{ color: var(--txt); }
+.modal-body{ padding: 16px 24px 24px; }
+.modal-sub{ color: var(--txt2); font-size:12px; margin: -8px 0 16px; padding: 0 24px; }
+
+.row{ display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+.row label{ width:110px; font-size:12px; color: var(--txt2); flex-shrink:0; }
+.row input{
+  flex:1; background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:9px 10px; font-size:13px; outline:none;
+}
+.row input:focus{ border-color: var(--accent); }
+
+.detail-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin: 14px 0; }
+.detail-grid .f label{ font-size:10px; text-transform:uppercase; letter-spacing:.6px; color: var(--txt3); display:block; margin-bottom:4px;}
+.detail-grid .f .v{ font-size:14px; font-weight:600; }
+
+.admin-search{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.admin-search input{
+  background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:9px 12px; font-size:13px; outline:none;
+}
+table.admin-table{ width:100%; border-collapse: collapse; font-size:12px; }
+table.admin-table th{
+  text-align:left; background: var(--card2); color: var(--txt2); padding:9px 10px;
+  position: sticky; top:0; text-transform:uppercase; letter-spacing:.5px; font-size:10px;
+}
+table.admin-table td{ padding:9px 10px; border-bottom:1px solid var(--divider); }
+table.admin-table tr:nth-child(even){ background: var(--card); }
+table.admin-table tr:hover{ background: var(--card2); }
+.table-wrap{ max-height: 380px; overflow:auto; border:1px solid var(--border); border-radius:10px; }
+
+.badge{
+  display:inline-block; background: var(--input-bg); border:1px solid var(--border);
+  border-radius:20px; padding:4px 14px; font-size:11px; color: var(--platinum); font-weight:700;
+}
+
+.footer-note{ text-align:center; color: var(--txt-dim); font-size:11px; padding: 10px 0 30px; }
+
+/* ============ Seat-count step ============ */
+.seat-count-grid{
+  display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-bottom: 4px;
+}
+.count-btn{
+  width:38px; height:38px; border-radius:50%; border:1px solid var(--border);
+  background: var(--input-bg); color: var(--txt2); font-weight:700; font-size:14px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition: all .12s ease;
+}
+.count-btn:hover{ border-color: var(--accent); color: var(--txt); }
+.count-btn.active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+.tier-rows{ border-top:1px solid var(--divider); margin-top:16px; padding-top:14px; }
+.tier-row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 4px; border-bottom:1px solid var(--divider);
+}
+.tier-row:last-child{ border-bottom:none; }
+.tier-name{ font-size:12px; color: var(--txt2); text-transform:uppercase; letter-spacing:.5px; font-weight:700; }
+.tier-price{ font-size:15px; font-weight:800; color: var(--txt); margin-top:2px; }
+.tier-status{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+.tier-status.available{ color: var(--success); }
+.tier-status.almost{ color: var(--warn); }
+.tier-status.full{ color: var(--danger); }
+
+.spinner{
+  display:inline-block; width:14px; height:14px; border-radius:50%;
+  border:2px solid var(--txt3); border-top-color: var(--txt); animation: spin .7s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+/* ============ Browse view ============ */
+.browse-wrap{ max-width: 1100px; margin: 0 auto; padding: 24px 28px 60px; }
+.browse-card{
+  background: var(--card); border:1px solid var(--border); border-radius:14px;
+  padding: 18px 20px; margin-bottom: 18px;
+}
+.browse-card h3{
+  font-size:12px; text-transform:uppercase; letter-spacing:.8px; color: var(--txt3); margin:0 0 12px;
+}
+
+.movie-picker{ display:flex; flex-wrap:wrap; gap:10px; }
+.movie-pill{
+  padding:10px 18px; border-radius:10px; border:1px solid var(--border);
+  background: var(--input-bg); color: var(--txt2); font-weight:700; font-size:13px;
+  cursor:pointer; transition: all .12s ease;
+}
+.movie-pill:hover{ border-color: var(--accent); color: var(--txt); }
+.movie-pill.active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+.date-strip{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
+.date-pill{
+  flex-shrink:0; min-width:64px; text-align:center; padding:10px 6px; border-radius:10px;
+  border:1px solid var(--border); background: var(--input-bg); cursor:pointer;
+  transition: all .12s ease;
+}
+.date-pill .dow{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; color: var(--txt3); }
+.date-pill .dnum{ font-size:16px; font-weight:800; color: var(--txt); margin:2px 0; }
+.date-pill .dmon{ font-size:10px; color: var(--txt3); text-transform:uppercase; }
+.date-pill:hover{ border-color: var(--accent); }
+.date-pill.active{ background: var(--accent); border-color: var(--accent); }
+.date-pill.active .dow, .date-pill.active .dnum, .date-pill.active .dmon{ color:#fff; }
+
+.cinema-card{
+  background: var(--card); border:1px solid var(--border); border-radius:14px;
+  padding: 18px 20px; margin-bottom: 14px;
+}
+.cinema-hdr{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:6px;}
+.cinema-name{ font-size:15px; font-weight:800; color: var(--txt); }
+.cinema-loc{ font-size:12px; color: var(--txt3); margin-top:2px; }
+.cinema-amenities{ display:flex; gap:8px; flex-wrap:wrap; }
+.amenity-tag{
+  font-size:10px; color: var(--platinum); background: var(--input-bg);
+  border:1px solid var(--border); border-radius:20px; padding:3px 10px;
+}
+.show-times{ display:flex; flex-wrap:wrap; gap:10px; }
+.time-btn{
+  border:1px solid var(--success); border-radius:8px; padding:9px 16px;
+  background: transparent; color: var(--txt); cursor:pointer; text-align:center;
+  transition: all .12s ease; min-width: 90px;
+}
+.time-btn .tt{ font-size:13px; font-weight:700; }
+.time-btn .tf{ font-size:10px; color: var(--txt3); margin-top:2px; }
+.time-btn:hover{ background: rgba(34,197,94,.12); }
+.time-btn.almost{ border-color: var(--warn); }
+.time-btn.almost:hover{ background: rgba(245,158,11,.12); }
+.time-btn.full{ border-color: var(--txt-dim); cursor:not-allowed; opacity:.5; }
+.time-btn.full:hover{ background: none; }
+
+/* ============ Now-booking bar (replaces old selectors in seat panel) ============ */
+.now-booking-bar{
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom: 18px;
+}
+.nb-info{ flex:1; min-width: 160px; }
+.nb-movie{ font-size:15px; font-weight:800; color: var(--txt); }
+.nb-sub{ font-size:12px; color: var(--txt3); margin-top:2px; }
+
+/* ============ Payment modal ============ */
+.promo-row{ display:flex; gap:8px; margin-bottom:8px; }
+.promo-row input{
+  flex:1; background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:10px 12px; font-size:13px; outline:none; font-weight:700;
+}
+.promo-row input:focus{ border-color: var(--accent); }
+.promo-applied{
+  display:flex; justify-content:space-between; align-items:center;
+  background: rgba(34,197,94,.1); border:1px solid var(--success); border-radius:8px;
+  padding:9px 14px; margin-bottom:14px; font-size:12px; color: var(--success); font-weight:700;
+}
+.promo-remove{ background:none; border:none; color: var(--success); cursor:pointer; font-size:15px; line-height:1; }
+
+.pay-breakdown{ margin-bottom:14px; }
+.pay-breakdown .brow{
+  display:flex; justify-content:space-between; font-size:12px; color: var(--txt2); padding:5px 2px;
+}
+.pay-breakdown .brow.discount{ color: var(--success); }
+
+.pay-total{
+  display:flex; justify-content:space-between; align-items:center;
+  background: var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:14px 18px; margin-bottom:16px; font-size:12px; color: var(--txt2);
+  text-transform:uppercase; letter-spacing:.6px;
+}
+.pay-total .amt{ font-size:22px; font-weight:800; color: var(--success); text-transform:none; letter-spacing:0; }
+
+.pay-tabs{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.pay-tab{
+  flex:1; min-width:80px; text-align:center; padding:10px 8px; border-radius:9px;
+  border:1px solid var(--border); background: var(--input-bg); color: var(--txt2);
+  font-size:12px; font-weight:700; cursor:pointer; transition: all .12s ease;
+}
+.pay-tab:hover{ border-color: var(--accent); }
+.pay-tab.active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+.pay-panel label{
+  font-size:10px; text-transform:uppercase; letter-spacing:.6px; color: var(--txt3); display:block; margin-bottom:5px;
+}
+.pay-panel input{
+  width:100%; background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:8px; padding:10px 12px; font-size:13px; outline:none;
+}
+.pay-panel input:focus{ border-color: var(--accent); }
+
+.wallet-box{
+  display:flex; justify-content:space-between; align-items:center;
+  background: var(--input-bg); border:1px solid var(--border); border-radius:10px;
+  padding:14px 16px; font-size:12px; color: var(--txt2);
+}
+.wallet-balance{ font-size:16px; font-weight:800; color: var(--success); }
+
+.cash-note{ font-size:12px; color: var(--txt2); line-height:1.6; }
+
+.pay-processing{
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  padding: 18px 0 4px; color: var(--txt2); font-size:13px;
+}
+
+/* ============ My Bookings list ============ */
+.mb-card{
+  background: var(--card); border:1px solid var(--border); border-radius:12px;
+  padding: 16px 18px; margin-bottom: 12px;
+}
+.mb-hdr{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:6px; }
+.mb-movie{ font-size:14px; font-weight:800; color: var(--txt); }
+.mb-sub{ font-size:12px; color: var(--txt3); margin-top:2px; }
+.mb-amt{ font-size:16px; font-weight:800; color: var(--success); }
+.mb-seats{ font-size:12px; color: var(--txt2); margin-bottom:12px; }
+.mb-actions{ display:flex; gap:10px; }
+
+/* ============ City picker ============ */
+.city-search{
+  width:100%; background: var(--input-bg); color: var(--txt); border:1px solid var(--border);
+  border-radius:10px; padding:12px 14px; font-size:14px; outline:none;
+}
+.city-search:focus{ border-color: var(--accent); }
+
+.city-grid{
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:12px;
+}
+.city-card{
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding:16px 8px; border-radius:12px; border:1px solid var(--border);
+  background: var(--card2); cursor:pointer; transition: all .12s ease;
+}
+.city-card:hover{ border-color: var(--accent); }
+.city-card.active{ border-color: var(--accent); background: rgba(224,58,80,.12); }
+.city-card .icon{ font-size:26px; }
+.city-card .name{ font-size:12px; font-weight:700; color: var(--txt); text-align:center; }
+.city-card .dot{ width:6px; height:6px; border-radius:50%; background: var(--success); display:inline-block; margin-right:4px; }
+.city-card.no-cinema{ opacity:.55; }
+
+.city-other-list{ max-height:260px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; }
+.city-other-row{
+  padding:12px 16px; font-size:13px; color: var(--txt); cursor:pointer;
+  border-bottom:1px solid var(--divider); transition: background .12s ease;
+}
+.city-other-row:last-child{ border-bottom:none; }
+.city-other-row:hover{ background: var(--card2); }
+.city-other-row .no-cinema-tag{ font-size:10px; color: var(--txt3); margin-left:8px; }
+
+/* ============ Analytics dashboard ============ */
+.analytics-kpis{
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:14px;
+  margin-bottom: 20px;
+}
+.kpi-card{
+  background: var(--card2); border:1px solid var(--border); border-radius:12px;
+  padding: 16px 18px;
+}
+.kpi-label{ font-size:10px; text-transform:uppercase; letter-spacing:.6px; color: var(--txt3); margin-bottom:6px; }
+.kpi-value{ font-size:22px; font-weight:800; color: var(--txt); }
+
+.chart-card{
+  background: var(--card2); border:1px solid var(--border); border-radius:12px;
+  padding: 16px 18px; margin-bottom: 16px;
+}
+.chart-title{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color: var(--txt3); margin-bottom:12px; }
+.chart-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; }
+
+/* ============ Toast notifications ============ */
+.toast-container{
+  position: fixed; bottom: 20px; right: 20px; z-index: 500;
+  display: flex; flex-direction: column-reverse; gap: 10px;
+  max-width: 340px;
+}
+.toast{
+  background: var(--card); border:1px solid var(--border); border-left:4px solid var(--accent);
+  border-radius:10px; padding:13px 16px; box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  font-size:13px; color: var(--txt); display:flex; align-items:flex-start; gap:10px;
+  animation: toast-in .2s ease-out;
+}
+.toast.success{ border-left-color: var(--success); }
+.toast.error{ border-left-color: var(--danger); }
+.toast.warn{ border-left-color: var(--warn); }
+.toast .icon{ font-size:15px; flex-shrink:0; margin-top:1px; }
+.toast .msg{ flex:1; line-height:1.4; }
+.toast .close{ background:none; border:none; color: var(--txt3); cursor:pointer; font-size:16px; line-height:1; padding:0; flex-shrink:0; }
+.toast.leaving{ animation: toast-out .18s ease-in forwards; }
+@keyframes toast-in{ from{ opacity:0; transform: translateX(16px); } to{ opacity:1; transform: translateX(0); } }
+@keyframes toast-out{ from{ opacity:1; } to{ opacity:0; transform: translateX(16px); } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="top-stripe"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🎬</span>
+    <h1>ReelKart Theatres</h1>
+    <button class="city-pill" id="btnCityPicker">
+      <span id="citySelectedLabel">Choose city</span>
+      <span class="city-chevron">▾</span>
+    </button>
+  </div>
+  <button class="theme-toggle" id="btnThemeToggle" title="Toggle light/dark theme">
+    <span id="themeToggleIcon">🌙</span>
+  </button>
+  <div class="nav-actions" id="navLoggedOut">
+    <button class="btn secondary" id="btnLogin">Login</button>
+  </div>
+  <div class="nav-actions" id="navLoggedIn" style="display:none;">
+    <span class="nav-username" id="navUsername"></span>
+    <button class="btn ghost" id="btnMyBookings">My Bookings</button>
+    <button class="btn secondary" id="btnAdminPanel" style="display:none;">Admin Panel</button>
+    <button class="btn ghost" id="btnLogout">Logout</button>
+  </div>
+</header>
+
+<!-- ===================== BROWSE VIEW ===================== -->
+<div id="browseView" class="browse-wrap">
+
+  <div class="browse-card">
+    <h3>Now showing</h3>
+    <div class="movie-picker" id="moviePicker"></div>
+  </div>
+
+  <div class="browse-card" id="dateCard" style="display:none;">
+    <div class="date-strip" id="dateStrip"></div>
+  </div>
+
+  <div id="cinemaListing"></div>
+
+  <div class="hint" id="browseHint" style="margin: 30px 0;">Pick a movie to see showtimes.</div>
+</div>
+
+<!-- ===================== BOOKING VIEW ===================== -->
+<div id="bookingView" class="layout" style="display:none;">
+
+  <!-- ===================== SEAT MAP PANEL ===================== -->
+  <section class="seat-panel">
+    <div class="now-booking-bar">
+      <button class="btn ghost small" id="btnBackToBrowse">← Back to showtimes</button>
+      <div class="nb-info">
+        <div class="nb-movie" id="nbMovie"></div>
+        <div class="nb-sub" id="nbSub"></div>
+      </div>
+      <div class="field">
+        <label>Seats needed</label>
+        <button class="btn secondary" id="btnSeatCount" style="padding:9px 16px; white-space:nowrap;">2 seats ✎</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="seatCanvas" width="820" height="440"></canvas>
+      <div class="seat-tooltip" id="seatTooltip"></div>
+    </div>
+
+    <div class="legend">
+      <div class="item"><span class="swatch" style="background:var(--seat-avail)"></span> Available</div>
+      <div class="item"><span class="swatch" style="background:var(--seat-sel)"></span> Selected</div>
+      <div class="item"><span class="swatch" style="background:var(--warn)"></span> Held by another user</div>
+      <div class="item"><span class="swatch" style="background:var(--seat-booked); border:1px solid var(--border)"></span> Booked</div>
+    </div>
+    <div class="hold-timer-banner" id="holdTimerBanner" style="display:none;">
+      <span>⏳</span><span id="holdTimerText">Seats reserved — 10:00</span>
+    </div>
+    <div class="hint" id="seatHint">Loading seat map…</div>
+  </section>
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+
+    <div class="card">
+      <h3>Ticket type</h3>
+      <div class="ticket-types" id="ticketTypes"></div>
+    </div>
+
+    <div class="card">
+      <h3>Selected seats</h3>
+      <div class="chips" id="selectedChips"><span class="chip empty">No seats selected yet</span></div>
+    </div>
+
+    <div class="card">
+      <h3>🍿 Food &amp; Beverages</h3>
+      <div class="addon-list" id="addonList"></div>
+    </div>
+
+    <div class="card">
+      <h3>Booking as</h3>
+      <div id="bookingAsLoggedOut">
+        <div class="hint" style="margin:0 0 10px; text-align:left;">You'll need to log in or create an account before paying — but feel free to pick your seats first.</div>
+        <button class="btn secondary" id="btnLoginFromSidebar" style="width:100%; padding:10px;">Log in / Sign up</button>
+      </div>
+      <div id="bookingAsLoggedIn" style="display:none;">
+        <div class="mb-movie" id="acctName"></div>
+        <div class="mb-sub" id="acctContact"></div>
+      </div>
+
+      <div class="total-row" style="margin-top:14px; flex-direction:column; align-items:stretch; gap:6px; padding:14px 18px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--txt2);">
+          <span>Seat subtotal</span><span id="subtotalAmt">₹0</span>
+        </div>
+        <div id="addonSubtotalRow" style="display:none; justify-content:space-between; font-size:12px; color:var(--txt2);">
+          <span>Food &amp; Beverages</span><span id="addonSubtotalAmt">₹0</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--warn);">
+          <span id="taxLabel">Tax (20%)</span><span id="taxAmt">₹0</span>
+        </div>
+      </div>
+      <div class="total-row">
+        <div class="lbl">Total</div>
+        <div class="amt"><span>₹</span><span id="totalAmt">0</span></div>
+      </div>
+
+      <div class="error-msg" id="formError"></div>
+      <div class="success-msg" id="formSuccess"></div>
+
+      <button class="btn" id="btnBook" style="width:100%; margin-top:12px; padding:13px;">
+        Continue to Payment
+      </button>
+    </div>
+
+  </aside>
+</div>
+
+<div class="footer-note">ReelKart Theatres &middot; Powered by your FastAPI backend</div>
+
+<!-- ===================== MODAL: CITY PICKER ===================== -->
+<div class="overlay" id="modalCity">
+  <div class="modal wide">
+    <div class="modal-hdr"><h2>Select your city</h2><button class="x" data-close="modalCity">&times;</button></div>
+    <div class="modal-body">
+      <input id="citySearch" type="text" placeholder="Search for your city" class="city-search">
+
+      <button class="btn ghost" id="btnAutoDetect" style="width:100%; padding:11px; margin-top:14px; text-align:left;">
+        📍 Auto-detect my location
+      </button>
+      <div class="error-msg" id="cityDetectStatus"></div>
+
+      <div id="citySearchResults" style="display:none; margin-top:16px;"></div>
+
+      <div id="cityDefaultSections">
+        <div class="modal-sub" style="padding:0; margin:20px 0 10px;">POPULAR CITIES</div>
+        <div class="city-grid" id="cityPopularGrid"></div>
+
+        <div class="modal-sub" style="padding:0; margin:22px 0 10px;">OTHER CITIES</div>
+        <div class="city-other-list" id="cityOtherList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: HOW MANY SEATS ===================== -->
+<div class="overlay" id="modalSeatCount">
+  <div class="modal">
+    <div class="modal-hdr"><h2>How many seats?</h2><button class="x" data-close="modalSeatCount">&times;</button></div>
+    <div class="modal-body">
+      <div class="seat-count-grid" id="seatCountGrid"></div>
+      <div class="tier-rows" id="seatCountTiers"></div>
+      <button class="btn" id="btnConfirmSeatCount" style="width:100%; padding:13px; margin-top:16px;">Select Seats</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: PAYMENT ===================== -->
+<div class="overlay" id="modalPayment">
+  <div class="modal">
+    <div class="modal-hdr"><h2>Complete payment</h2><button class="x" data-close="modalPayment" id="payCloseBtn">&times;</button></div>
+    <div class="modal-body">
+      <div class="promo-row">
+        <input type="text" id="promoInput" placeholder="Promo code (optional)" style="text-transform:uppercase;">
+        <button class="btn secondary small" id="btnApplyPromo">Apply</button>
+      </div>
+      <div class="error-msg" id="promoError"></div>
+      <div class="promo-applied" id="promoApplied" style="display:none;">
+        <span id="promoAppliedText"></span>
+        <button class="promo-remove" id="btnRemovePromo">&times;</button>
+      </div>
+
+      <div class="pay-breakdown" id="payBreakdown">
+        <div class="brow"><span>Subtotal</span><span id="payBreakdownSubtotal">₹0</span></div>
+        <div class="brow discount" id="payBreakdownDiscountRow" style="display:none;">
+          <span>Discount</span><span id="payBreakdownDiscount">&minus;₹0</span>
+        </div>
+        <div class="brow"><span>Tax (20%)</span><span id="payBreakdownTax">₹0</span></div>
+      </div>
+
+      <div class="pay-total">
+        <span>Amount to pay</span>
+        <span class="amt">₹<span id="payAmount">0</span></span>
+      </div>
+
+      <div class="pay-tabs" id="payTabs">
+        <div class="pay-tab active" data-mode="UPI">UPI</div>
+        <div class="pay-tab" data-mode="Card">Card</div>
+        <div class="pay-tab" data-mode="Wallet">Wallet</div>
+        <div class="pay-tab" data-mode="Cash">Pay at counter</div>
+      </div>
+
+      <div class="pay-panel" id="payPanelUPI">
+        <label>UPI ID</label>
+        <input type="text" id="payUpiId" placeholder="yourname@upi">
+      </div>
+      <div class="pay-panel" id="payPanelCard" style="display:none;">
+        <label>Card number</label>
+        <input type="text" id="payCardNumber" placeholder="4111 1111 1111 1111" maxlength="19">
+        <div style="display:flex; gap:10px; margin-top:10px;">
+          <div style="flex:1;">
+            <label>Expiry</label>
+            <input type="text" id="payCardExpiry" placeholder="MM/YY" maxlength="5">
+          </div>
+          <div style="flex:1;">
+            <label>CVV</label>
+            <input type="password" id="payCardCvv" placeholder="•••" maxlength="3">
+          </div>
+        </div>
+      </div>
+      <div class="pay-panel" id="payPanelWallet" style="display:none;">
+        <div class="wallet-box">
+          <span>Hamilton Wallet balance</span>
+          <span class="wallet-balance">₹9,999</span>
+        </div>
+      </div>
+      <div class="pay-panel" id="payPanelCash" style="display:none;">
+        <div class="cash-note">Pay in cash at the box office when you collect your tickets. Your seats stay reserved for this show.</div>
+      </div>
+
+      <div class="error-msg" id="payError"></div>
+
+      <button class="btn" id="btnSubmitPayment" style="width:100%; padding:13px; margin-top:16px;">
+        Pay ₹<span id="payButtonAmount">0</span>
+      </button>
+
+      <div class="pay-processing" id="payProcessing" style="display:none;">
+        <div class="spinner" style="width:22px; height:22px; border-width:3px;"></div>
+        <div id="payProcessingText">Processing payment…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: RECEIPT PREVIEW ===================== -->
+<div class="overlay" id="modalReceipt">
+  <div class="modal wide">
+    <div class="modal-hdr">
+      <h2>🎟 Your receipt</h2>
+      <button class="x" data-close="modalReceipt">&times;</button>
+    </div>
+    <div class="modal-body" style="padding-top:0;">
+      <iframe id="receiptFrame" style="width:100%; height:65vh; border:1px solid var(--border); border-radius:10px; background:#fff;"></iframe>
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button class="btn secondary" id="receiptOpenTabBtn" style="flex:1; padding:11px;">Open in new tab</button>
+        <button class="btn secondary" id="receiptDownloadPdfBtn" style="flex:1; padding:11px;">⬇ Download PDF</button>
+        <button class="btn" id="receiptPrintBtn" style="flex:1; padding:11px;">🖨 Print</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: BOOKING CONFIRMED ===================== -->
+<div class="overlay" id="modalConfirm">
+  <div class="modal">
+    <div class="modal-hdr"><h2>🎟 Booking confirmed</h2><button class="x" data-close="modalConfirm">&times;</button></div>
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div class="f"><label>Booking ID</label><div class="v" id="cfCid" style="font-family:var(--ff-mono); color:var(--gold)"></div></div>
+        <div class="f"><label>Total paid</label><div class="v" id="cfTotal" style="color:var(--success)"></div></div>
+        <div class="f"><label>Subtotal</label><div class="v" id="cfSubtotal"></div></div>
+        <div class="f" id="cfDiscountRow" style="display:none;"><label>Discount</label><div class="v" id="cfDiscount" style="color:var(--success)"></div></div>
+        <div class="f"><label>Tax</label><div class="v" id="cfTax" style="color:var(--warn)"></div></div>
+        <div class="f"><label>Movie</label><div class="v" id="cfMovie"></div></div>
+        <div class="f"><label>Cinema</label><div class="v" id="cfCinema"></div></div>
+        <div class="f"><label>Show</label><div class="v" id="cfShow"></div></div>
+        <div class="f full"><label>Seats</label><div class="v" id="cfSeats"></div></div>
+        <div class="f full" id="cfAddonsRow" style="display:none;"><label>Food &amp; Beverages</label><div class="v" id="cfAddons"></div></div>
+      </div>
+      <button class="btn" id="cfReceiptBtn" style="width:100%; padding:12px;">🖨 View / print receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: MY BOOKING ===================== -->
+<div class="overlay" id="modalMyBookings">
+  <div class="modal wide">
+    <div class="modal-hdr"><h2>🎟 My Bookings</h2><button class="x" data-close="modalMyBookings">&times;</button></div>
+    <div class="modal-body">
+      <div class="error-msg" id="myBookingsError"></div>
+      <div id="myBookingsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: LOGIN / REGISTER ===================== -->
+<div class="overlay" id="modalAuth">
+  <div class="modal">
+    <div class="modal-hdr"><h2 id="authTitle">Log in</h2><button class="x" data-close="modalAuth">&times;</button></div>
+    <div class="modal-sub" id="authSub">Log in to continue with your booking.</div>
+    <div class="modal-body">
+      <div class="pay-tabs" style="margin-bottom:16px;">
+        <div class="pay-tab active" id="authTabLogin" data-mode="login">Log in</div>
+        <div class="pay-tab" id="authTabRegister" data-mode="register">Create account</div>
+      </div>
+
+      <div id="authFieldsRegister" style="display:none;">
+        <div class="row"><label>First name</label><input id="regFirst" type="text"></div>
+        <div class="row"><label>Last name</label><input id="regLast" type="text"></div>
+        <div class="row"><label>Phone</label><input id="regPhone" type="text" placeholder="9876543210"></div>
+        <div class="row"><label>Sex</label>
+          <select id="regSex" style="flex:1; background:var(--input-bg); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:9px 10px; font-size:13px;">
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row"><label>Email</label><input id="authEmail" type="email" placeholder="jane@example.com"></div>
+      <div class="row"><label>Password</label><input id="authPassword" type="password"></div>
+
+      <div class="error-msg" id="authError"></div>
+      <button class="btn" id="btnAuthSubmit" style="width:100%; padding:12px; margin-top:6px;">Log in</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL: ADMIN PANEL ===================== -->
+<div class="overlay" id="modalAdminPanel">
+  <div class="modal wide">
+    <div class="modal-hdr"><h2>⚙ Admin panel</h2><button class="x" data-close="modalAdminPanel">&times;</button></div>
+    <div class="modal-body">
+      <div class="pay-tabs" style="margin-bottom:18px;">
+        <div class="pay-tab active" id="adminTabBookings" data-mode="bookings">Bookings</div>
+        <div class="pay-tab" id="adminTabAnalytics" data-mode="analytics">Analytics</div>
+      </div>
+
+      <div id="adminPaneBookings">
+        <div class="admin-search">
+          <input id="adSearchMovie" placeholder="Filter by movie…">
+          <input id="adSearchCid" placeholder="Filter by Customer ID…">
+          <button class="btn small" id="adSearchBtn">🔍 Search</button>
+          <button class="btn secondary small" id="adRefreshBtn">↺ Refresh</button>
+          <button class="btn danger small" id="adCancelBtn">✕ Cancel selected</button>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th></th><th>Customer ID</th><th>Movie</th><th>Cinema</th><th>Show</th>
+                <th>Seats</th><th>Type</th><th>Amount (₹)</th><th>Booked on</th>
+              </tr>
+            </thead>
+            <tbody id="adminTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adminPaneAnalytics" style="display:none;">
+        <div class="analytics-kpis">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-value" id="kpiRevenue">₹0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Total Bookings</div>
+            <div class="kpi-value" id="kpiBookings">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Tickets Sold</div>
+            <div class="kpi-value" id="kpiTickets">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Avg Occupancy</div>
+            <div class="kpi-value" id="kpiOccupancy">0%</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Revenue — last 14 days</div>
+          <canvas id="chartRevenue" height="90"></canvas>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <div class="chart-title">Popular Movies (tickets sold)</div>
+            <canvas id="chartMovies" height="140"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Ticket Type Split</div>
+            <canvas id="chartTicketTypes" height="140"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Revenue by Cinema</div>
+            <canvas id="chartCinemas" height="140"></canvas>
+          </div>
+        </div>
+        <div class="hint" id="analyticsHint" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   THEME — applied first, before anything else, to avoid a flash
+   ============================================================ */
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const icon = document.getElementById("themeToggleIcon");
+  if (icon) icon.textContent = theme === "light" ? "☀️" : "🌙";
+  localStorage.setItem("hamilton_theme", theme);
+}
+applyTheme(localStorage.getItem("hamilton_theme") || "dark");
+
+document.getElementById("btnThemeToggle").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "light" ? "dark" : "light");
+});
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const DEFAULT_API_BASE = "http://localhost:8000";
+let API_BASE = localStorage.getItem("hamilton_api_base") || DEFAULT_API_BASE;
+
+// Allow overriding the backend URL via ?api=https://your-backend.up.railway.app
+const qp = new URLSearchParams(location.search);
+if (qp.get("api")) {
+  API_BASE = qp.get("api").replace(/\/$/, "");
+  localStorage.setItem("hamilton_api_base", API_BASE);
+}
+
+async function api(path, opts = {}) {
+  const headers = { "Content-Type": "application/json", ...(opts.headers || {}) };
+  if (authToken && !headers.Authorization) headers.Authorization = `Bearer ${authToken}`;
+  const res = await fetch(API_BASE + path, { ...opts, headers });
+  let data = null;
+  try { data = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) {
+    const detail = data && data.detail
+      ? (Array.isArray(data.detail) ? data.detail.map(d => d.msg).join(", ") : data.detail)
+      : `Request failed (${res.status})`;
+    throw new Error(detail);
+  }
+  return data;
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let MOVIES = [];             // from /movies
+let DATES = [];               // from /movies — booking window
+let TICKET_TYPES = [];       // [{name, base_price}]
+let SEAT_TIER_MOD = {};      // {section: modifier}
+let TAX_RATE = 0;            // e.g. 0.20 for 20%
+let MIN_SEAT_PRICE = 0;
+let ADDON_CATALOG = [];      // from /addons
+let selectedAddons = {};     // item_id -> qty
+let CITY_CATALOG = { popular: [], other: [], cities_with_cinemas: [] };
+let selectedCity = localStorage.getItem("hamilton_city") || null;
+let currentLayout = [];      // from /seats
+let bookedSeats = new Set();
+let heldByOthers = new Set();   // seats someone else is currently checking out with
+let selectedSeats = new Set();
+let seatRects = {};          // seat_label -> {x,y,w,h,section}
+let currentTicketType = null;
+let desiredSeatCount = null;   // set via the "How many seats?" step
+let hoveredSeat = null;
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+let authToken = localStorage.getItem("hamilton_auth_token") || null;
+let currentUser = null;   // {id, email, first_name, last_name, phone, sex, role}
+let pendingBookingIntent = false;   // true if login was triggered by "Continue to Payment"
+
+let selectedMovie = null;
+let selectedDate = null;
+let currentShow = null;       // full show detail object once a showtime is picked
+
+const canvas = document.getElementById("seatCanvas");
+const ctx = canvas.getContext("2d");
+
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ============================================================
+   INIT
+   ============================================================ */
+init();
+
+async function init() {
+  bindStaticEvents();
+  desiredSeatCount = 2;
+  await restoreSession();
+  try {
+    const catalog = await api("/movies");
+    MOVIES = catalog.movies;
+    DATES = catalog.dates;
+    TICKET_TYPES = catalog.ticket_types;
+    catalog.seat_tiers.forEach(t => SEAT_TIER_MOD[t.section] = t.modifier);
+    TAX_RATE = catalog.tax_rate ?? 0;
+    MIN_SEAT_PRICE = catalog.min_seat_price ?? 100;
+
+    populateTicketTypes();
+    renderMoviePicker();
+
+    ADDON_CATALOG = await api("/addons");
+    renderAddonList();
+
+    CITY_CATALOG = await api("/cities");
+    if (!selectedCity) {
+      // Default to the first city that actually has cinemas, so browsing works immediately.
+      selectedCity = CITY_CATALOG.cities_with_cinemas[0] || null;
+      if (selectedCity) localStorage.setItem("hamilton_city", selectedCity);
+    }
+    updateCityLabel();
+  } catch (e) {
+    document.getElementById("browseHint").textContent =
+      `Could not reach the backend at ${API_BASE}. Is it running? (${e.message})`;
+  }
+}
+
+/* ============================================================
+   AUTH — login, register, session restore, logout
+   ============================================================ */
+async function restoreSession() {
+  if (!authToken) { updateAuthUI(); return; }
+  try {
+    currentUser = await api("/auth/me");
+    updateAuthUI();
+  } catch (e) {
+    // Stored token is invalid/expired — clear it quietly.
+    authToken = null;
+    currentUser = null;
+    localStorage.removeItem("hamilton_auth_token");
+    updateAuthUI();
+  }
+}
+
+function updateAuthUI() {
+  const loggedIn = !!currentUser;
+  document.getElementById("navLoggedOut").style.display = loggedIn ? "none" : "flex";
+  document.getElementById("navLoggedIn").style.display = loggedIn ? "flex" : "none";
+  document.getElementById("bookingAsLoggedOut").style.display = loggedIn ? "none" : "block";
+  document.getElementById("bookingAsLoggedIn").style.display = loggedIn ? "block" : "none";
+
+  if (loggedIn) {
+    document.getElementById("navUsername").textContent = `Hi, ${currentUser.first_name}`;
+    document.getElementById("btnAdminPanel").style.display = currentUser.role === "admin" ? "block" : "none";
+    document.getElementById("acctName").textContent = `${currentUser.first_name} ${currentUser.last_name}`;
+    document.getElementById("acctContact").textContent = `${currentUser.email} · ${currentUser.phone}`;
+  }
+}
+
+function setSession(token, user) {
+  authToken = token;
+  currentUser = user;
+  localStorage.setItem("hamilton_auth_token", token);
+  updateAuthUI();
+}
+
+function clearSession() {
+  authToken = null;
+  currentUser = null;
+  localStorage.removeItem("hamilton_auth_token");
+  updateAuthUI();
+}
+
+document.getElementById("btnLogout").addEventListener("click", () => {
+  clearSession();
+  closeModal("modalAdminPanel");
+});
+
+function openAuthModal(intent) {
+  pendingBookingIntent = !!intent;
+  document.getElementById("authError").textContent = "";
+  document.getElementById("authEmail").value = "";
+  document.getElementById("authPassword").value = "";
+  setAuthTab("login");
+  document.getElementById("authSub").textContent = intent
+    ? "Log in to continue with your booking."
+    : "Log in to manage your bookings.";
+  openModal("modalAuth");
+}
+
+document.getElementById("btnLogin").addEventListener("click", () => openAuthModal(false));
+document.getElementById("btnLoginFromSidebar").addEventListener("click", () => openAuthModal(false));
+
+function setAuthTab(mode) {
+  const isRegister = mode === "register";
+  document.getElementById("authTabLogin").classList.toggle("active", !isRegister);
+  document.getElementById("authTabRegister").classList.toggle("active", isRegister);
+  document.getElementById("authFieldsRegister").style.display = isRegister ? "block" : "none";
+  document.getElementById("authTitle").textContent = isRegister ? "Create account" : "Log in";
+  document.getElementById("btnAuthSubmit").textContent = isRegister ? "Create account" : "Log in";
+  document.getElementById("authError").textContent = "";
+}
+document.getElementById("authTabLogin").addEventListener("click", () => setAuthTab("login"));
+document.getElementById("authTabRegister").addEventListener("click", () => setAuthTab("register"));
+
+document.getElementById("btnAuthSubmit").addEventListener("click", async () => {
+  const isRegister = document.getElementById("authTabRegister").classList.contains("active");
+  const errEl = document.getElementById("authError");
+  errEl.textContent = "";
+
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  if (!email || !password) { errEl.textContent = "Please fill in email and password."; return; }
+
+  const btn = document.getElementById("btnAuthSubmit");
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.innerHTML = `<span class="spinner"></span>`;
+
+  try {
+    let result;
+    if (isRegister) {
+      const first_name = document.getElementById("regFirst").value.trim();
+      const last_name = document.getElementById("regLast").value.trim();
+      const phone = document.getElementById("regPhone").value.trim();
+      const sex = document.getElementById("regSex").value;
+      if (!first_name || !last_name || !phone) {
+        errEl.textContent = "Please fill in your name and phone.";
+        btn.disabled = false; btn.textContent = originalText;
+        return;
+      }
+      result = await api("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, first_name, last_name, phone, sex }),
+      });
+    } else {
+      result = await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+    }
+    setSession(result.access_token, result.user);
+    closeModal("modalAuth");
+    toast(`Welcome, ${result.user.first_name}!`, "success");
+
+    if (pendingBookingIntent) {
+      pendingBookingIntent = false;
+      openPaymentModal(buildBookingPayload());
+    }
+  } catch (e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
+/* ============================================================
+   CITY PICKER — search, auto-detect, popular grid, other cities
+   ============================================================ */
+const CITY_ICONS = {
+  "Mumbai": "🏛️", "Delhi-NCR": "🏛️", "Bengaluru": "🏢", "Hyderabad": "🕌",
+  "Chandigarh": "🌆", "Ahmedabad": "🕌", "Pune": "🏯", "Chennai": "🛕",
+  "Kolkata": "🏛️", "Kochi": "🌴",
+};
+
+function updateCityLabel() {
+  document.getElementById("citySelectedLabel").textContent = selectedCity || "Choose city";
+}
+
+document.getElementById("btnCityPicker").addEventListener("click", openCityModal);
+
+function openCityModal() {
+  document.getElementById("citySearch").value = "";
+  document.getElementById("cityDetectStatus").textContent = "";
+  document.getElementById("citySearchResults").style.display = "none";
+  document.getElementById("cityDefaultSections").style.display = "block";
+  renderCityGrid();
+  renderCityOtherList();
+  openModal("modalCity");
+}
+
+function cityCard(name) {
+  const hasCinema = CITY_CATALOG.cities_with_cinemas.includes(name);
+  const icon = CITY_ICONS[name] || "🏙️";
+  return `
+    <div class="city-card ${name === selectedCity ? 'active' : ''} ${hasCinema ? '' : 'no-cinema'}" data-city="${escapeHtml(name)}">
+      <div class="icon">${icon}</div>
+      <div class="name">${hasCinema ? '<span class=\"dot\"></span>' : ''}${escapeHtml(name)}</div>
+    </div>
+  `;
+}
+
+function renderCityGrid() {
+  const grid = document.getElementById("cityPopularGrid");
+  grid.innerHTML = CITY_CATALOG.popular.map(cityCard).join("");
+  grid.querySelectorAll(".city-card").forEach(el => {
+    el.addEventListener("click", () => selectCity(el.dataset.city));
+  });
+}
+
+function renderCityOtherList(filterText) {
+  const wrap = document.getElementById("cityOtherList");
+  const all = [...CITY_CATALOG.other].sort();
+  const filtered = filterText
+    ? all.filter(c => c.toLowerCase().includes(filterText.toLowerCase()))
+    : all;
+  wrap.innerHTML = filtered.map(name => {
+    const hasCinema = CITY_CATALOG.cities_with_cinemas.includes(name);
+    return `<div class="city-other-row" data-city="${escapeHtml(name)}">${escapeHtml(name)}${hasCinema ? '' : '<span class="no-cinema-tag">no cinemas yet</span>'}</div>`;
+  }).join("") || `<div class="city-other-row" style="cursor:default; color:var(--txt3);">No cities match your search.</div>`;
+  wrap.querySelectorAll(".city-other-row[data-city]").forEach(el => {
+    el.addEventListener("click", () => selectCity(el.dataset.city));
+  });
+}
+
+function selectCity(name) {
+  selectedCity = name;
+  localStorage.setItem("hamilton_city", name);
+  updateCityLabel();
+  closeModal("modalCity");
+  if (selectedMovie && selectedDate) loadShowtimes();
+}
+
+document.getElementById("citySearch").addEventListener("input", (e) => {
+  const q = e.target.value.trim();
+  const resultsWrap = document.getElementById("citySearchResults");
+  const defaultSections = document.getElementById("cityDefaultSections");
+  if (!q) {
+    resultsWrap.style.display = "none";
+    defaultSections.style.display = "block";
+    return;
+  }
+  defaultSections.style.display = "none";
+  resultsWrap.style.display = "block";
+
+  const all = [...new Set([...CITY_CATALOG.popular, ...CITY_CATALOG.other])].sort();
+  const matches = all.filter(c => c.toLowerCase().includes(q.toLowerCase()));
+  resultsWrap.innerHTML = matches.length
+    ? matches.map(name => {
+        const hasCinema = CITY_CATALOG.cities_with_cinemas.includes(name);
+        return `<div class="city-other-row" data-city="${escapeHtml(name)}" style="border:1px solid var(--border); border-radius:8px; margin-bottom:6px;">${escapeHtml(name)}${hasCinema ? '' : '<span class="no-cinema-tag">no cinemas yet</span>'}</div>`;
+      }).join("")
+    : `<div class="hint">No cities match "${escapeHtml(q)}".</div>`;
+  resultsWrap.querySelectorAll(".city-other-row[data-city]").forEach(el => {
+    el.addEventListener("click", () => selectCity(el.dataset.city));
+  });
+});
+
+document.getElementById("btnAutoDetect").addEventListener("click", () => {
+  const statusEl = document.getElementById("cityDetectStatus");
+  if (!navigator.geolocation) {
+    statusEl.textContent = "Your browser doesn't support location detection — please pick a city manually.";
+    return;
+  }
+  statusEl.textContent = "Detecting your location…";
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
+        const { latitude, longitude } = pos.coords;
+        // Free reverse-geocoding, no API key required.
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+        );
+        const data = await res.json();
+        const addr = data.address || {};
+        const candidates = [addr.city, addr.town, addr.county, addr.state_district, addr.state].filter(Boolean);
+
+        const allKnown = [...new Set([...CITY_CATALOG.popular, ...CITY_CATALOG.other])];
+        let matched = null;
+        for (const candidate of candidates) {
+          matched = allKnown.find(known =>
+            known.toLowerCase() === candidate.toLowerCase() ||
+            known.toLowerCase().includes(candidate.toLowerCase()) ||
+            candidate.toLowerCase().includes(known.toLowerCase())
+          );
+          if (matched) break;
+        }
+
+        if (matched) {
+          statusEl.textContent = `Detected ${matched}.`;
+          selectCity(matched);
+        } else {
+          statusEl.textContent = `Detected near "${candidates[0] || 'your area'}", which isn't in our city list yet — please pick manually.`;
+        }
+      } catch (e) {
+        statusEl.textContent = "Couldn't determine your city automatically — please pick one manually.";
+      }
+    },
+    (err) => {
+      statusEl.textContent = err.code === err.PERMISSION_DENIED
+        ? "Location access denied — please pick a city manually."
+        : "Couldn't get your location — please pick a city manually.";
+    },
+    { timeout: 8000 }
+  );
+});
+
+/* ============================================================
+   BROWSE VIEW — movie picker → date strip → cinema listing
+   ============================================================ */
+function renderMoviePicker() {
+  const wrap = document.getElementById("moviePicker");
+  wrap.innerHTML = MOVIES.map(m => `
+    <div class="movie-pill ${m === selectedMovie ? 'active' : ''}" data-movie="${escapeHtml(m)}">${escapeHtml(m)}</div>
+  `).join("");
+  wrap.querySelectorAll(".movie-pill").forEach(el => {
+    el.addEventListener("click", () => {
+      selectedMovie = el.dataset.movie;
+      wrap.querySelectorAll(".movie-pill").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      document.getElementById("dateCard").style.display = "block";
+      renderDateStrip();
+      if (!selectedDate) selectedDate = DATES[0];
+      loadShowtimes();
+    });
+  });
+}
+
+function renderDateStrip() {
+  const wrap = document.getElementById("dateStrip");
+  wrap.innerHTML = DATES.map(d => {
+    const dt = new Date(d + "T00:00:00");
+    const dow = dt.toLocaleDateString("en-US", { weekday: "short" });
+    const dnum = dt.getDate();
+    const dmon = dt.toLocaleDateString("en-US", { month: "short" });
+    return `
+      <div class="date-pill ${d === selectedDate ? 'active' : ''}" data-date="${d}">
+        <div class="dow">${dow}</div>
+        <div class="dnum">${dnum}</div>
+        <div class="dmon">${dmon}</div>
+      </div>
+    `;
+  }).join("");
+  wrap.querySelectorAll(".date-pill").forEach(el => {
+    el.addEventListener("click", () => {
+      selectedDate = el.dataset.date;
+      wrap.querySelectorAll(".date-pill").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      loadShowtimes();
+    });
+  });
+}
+
+async function loadShowtimes() {
+  if (!selectedMovie || !selectedDate) return;
+  const listing = document.getElementById("cinemaListing");
+  const hint = document.getElementById("browseHint");
+  hint.textContent = "Loading showtimes…";
+  listing.innerHTML = "";
+  try {
+    const cityParam = selectedCity ? `&city=${encodeURIComponent(selectedCity)}` : "";
+    const data = await api(`/showtimes?movie=${encodeURIComponent(selectedMovie)}&date=${encodeURIComponent(selectedDate)}${cityParam}`);
+    if (!data.cinemas.length) {
+      hint.textContent = selectedCity
+        ? `No ReelKart Theatres showtimes for ${selectedMovie} in ${selectedCity} on this date.`
+        : `No showtimes found for ${selectedMovie} on this date.`;
+      return;
+    }
+    hint.textContent = "";
+    listing.innerHTML = data.cinemas.map(c => `
+      <div class="cinema-card">
+        <div class="cinema-hdr">
+          <div>
+            <div class="cinema-name">${escapeHtml(c.name)}</div>
+            <div class="cinema-loc">${escapeHtml(c.location)}</div>
+          </div>
+          <div class="cinema-amenities">
+            ${c.amenities.map(a => `<span class="amenity-tag">${escapeHtml(a)}</span>`).join("")}
+          </div>
+        </div>
+        <div class="show-times">
+          ${c.shows.map(s => `
+            <div class="time-btn ${s.status}" data-show-id="${s.show_id}" ${s.status === 'full' ? '' : ''}>
+              <div class="tt">${escapeHtml(s.show_time)}</div>
+              <div class="tf">${escapeHtml(s.format || '')}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `).join("");
+
+    listing.querySelectorAll(".time-btn").forEach(el => {
+      if (el.classList.contains("full")) return;
+      el.addEventListener("click", () => selectShow(parseInt(el.dataset.showId, 10)));
+    });
+  } catch (e) {
+    hint.textContent = `Could not load showtimes: ${e.message}`;
+  }
+}
+
+let seatPollTimer = null;
+let seatSocket = null;
+let wsReconnectTimer = null;
+let wsReconnectAttempts = 0;
+
+async function selectShow(showId) {
+  try {
+    currentShow = await api(`/show/${showId}`);
+  } catch (e) {
+    document.getElementById("browseHint").textContent = `Could not open that showtime: ${e.message}`;
+    return;
+  }
+  document.getElementById("nbMovie").textContent = currentShow.movie;
+  document.getElementById("nbSub").textContent =
+    `${currentShow.cinema_name} · ${new Date(currentShow.show_date + "T00:00:00").toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" })} · ${currentShow.show_time}${currentShow.format ? " · " + currentShow.format : ""}`;
+
+  document.getElementById("browseView").style.display = "none";
+  document.getElementById("bookingView").style.display = "grid";
+
+  selectedSeats.clear();
+  heldByOthers.clear();
+  stopHoldTimer();
+  updateSummary();
+  await loadSeatMap();
+  connectSeatSocket(currentShow.show_id);
+}
+
+/* ============================================================
+   LIVE SEAT UPDATES — WebSocket (instant), with polling as an
+   automatic fallback if the socket can't connect or drops.
+   ============================================================ */
+function connectSeatSocket(showId) {
+  disconnectSeatSocket();   // clean slate — no duplicate connections
+
+  let wsUrl;
+  try {
+    const httpUrl = new URL(API_BASE);
+    httpUrl.protocol = httpUrl.protocol === "https:" ? "wss:" : "ws:";
+    httpUrl.pathname = `/ws/seats/${showId}`;
+    wsUrl = httpUrl.toString();
+  } catch (e) {
+    startSeatPolling();   // malformed API_BASE — just fall back
+    return;
+  }
+
+  try {
+    seatSocket = new WebSocket(wsUrl);
+  } catch (e) {
+    startSeatPolling();
+    return;
+  }
+
+  seatSocket.onopen = () => {
+    wsReconnectAttempts = 0;
+    stopSeatPolling();   // live pushes are working — no need to poll
+  };
+
+  seatSocket.onmessage = (event) => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch (e) { return; }
+    if (msg.type === "seats_booked") applySeatUpdate(msg.seats, true);
+    else if (msg.type === "seats_released") applySeatUpdate(msg.seats, false);
+    else if (msg.type === "seats_held") applyHoldUpdate(msg.seats);
+  };
+
+  seatSocket.onclose = () => {
+    if (!currentShow || currentShow.show_id !== showId) return;   // we've moved on — don't reconnect
+    startSeatPolling();   // cover the gap while we try to reconnect
+    wsReconnectAttempts += 1;
+    const delay = Math.min(2000 * wsReconnectAttempts, 15000);
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = setTimeout(() => connectSeatSocket(showId), delay);
+  };
+
+  seatSocket.onerror = () => {
+    // onclose fires right after this — reconnect logic lives there.
+  };
+}
+
+function disconnectSeatSocket() {
+  clearTimeout(wsReconnectTimer);
+  wsReconnectTimer = null;
+  wsReconnectAttempts = 0;
+  if (seatSocket) {
+    seatSocket.onclose = null;   // don't trigger reconnect on a deliberate close
+    seatSocket.close();
+    seatSocket = null;
+  }
+  stopSeatPolling();
+}
+
+function applySeatUpdate(seats, isBooked) {
+  if (!seats || !seats.length) return;
+  if (isBooked) {
+    seats.forEach(s => { bookedSeats.add(s); heldByOthers.delete(s); });
+    const lost = seats.filter(s => selectedSeats.has(s));
+    if (lost.length) {
+      lost.forEach(s => selectedSeats.delete(s));
+      document.getElementById("seatHint").textContent =
+        `Heads up — ${lost.join(", ")} ${lost.length === 1 ? "was" : "were"} just booked by someone else and ${lost.length === 1 ? "has" : "have"} been deselected.`;
+      updateSummary();
+    }
+  } else {
+    seats.forEach(s => { bookedSeats.delete(s); heldByOthers.delete(s); });
+  }
+  drawSeatMap();
+}
+
+function applyHoldUpdate(seats) {
+  if (!seats || !seats.length) return;
+  // Don't mark my own selected seats as "held by others" — that's just my own hold broadcast back to me.
+  seats.forEach(s => { if (!selectedSeats.has(s)) heldByOthers.add(s); });
+  drawSeatMap();
+}
+
+/* ============================================================
+   SEAT HOLD TIMER — a selected seat is reserved for a few minutes
+   ============================================================ */
+let holdCountdownInterval = null;
+let holdExpiresAt = null;
+
+function startOrExtendHoldTimer(heldUntilIso) {
+  const newExpiry = new Date(heldUntilIso).getTime();
+  if (!holdExpiresAt || newExpiry > holdExpiresAt) holdExpiresAt = newExpiry;
+  document.getElementById("holdTimerBanner").style.display = "flex";
+  if (!holdCountdownInterval) {
+    holdCountdownInterval = setInterval(tickHoldTimer, 1000);
+    tickHoldTimer();
+  }
+}
+
+function tickHoldTimer() {
+  if (!holdExpiresAt) return;
+  const remainingMs = holdExpiresAt - Date.now();
+  if (remainingMs <= 0) {
+    expireHold();
+    return;
+  }
+  const mins = Math.floor(remainingMs / 60000);
+  const secs = Math.floor((remainingMs % 60000) / 1000);
+  document.getElementById("holdTimerText").textContent =
+    `Seats reserved — ${mins}:${secs.toString().padStart(2, "0")}`;
+  document.getElementById("holdTimerBanner").classList.toggle("urgent", remainingMs < 60000);
+}
+
+function expireHold() {
+  stopHoldTimer();
+  if (selectedSeats.size > 0) {
+    const expired = [...selectedSeats];
+    selectedSeats.clear();
+    drawSeatMap();
+    updateSummary();
+    toast("Your seat hold expired — please reselect your seats.", "warn");
+    releaseSeats(expired);
+  }
+}
+
+function stopHoldTimer() {
+  clearInterval(holdCountdownInterval);
+  holdCountdownInterval = null;
+  holdExpiresAt = null;
+  document.getElementById("holdTimerBanner").style.display = "none";
+  document.getElementById("holdTimerBanner").classList.remove("urgent");
+}
+
+function updateHoldTimerVisibility() {
+  if (selectedSeats.size === 0) stopHoldTimer();
+}
+
+function releaseSeats(seats) {
+  if (!seats.length || !currentShow) return;
+  api("/seats/release", {
+    method: "POST",
+    body: JSON.stringify({ show_id: currentShow.show_id, seats }),
+  }).catch(() => { /* best-effort — the hold will simply expire on its own otherwise */ });
+}
+
+function releaseAllMyHolds() {
+  if (selectedSeats.size && currentShow) releaseSeats([...selectedSeats]);
+}
+
+// Best-effort cleanup if the tab is closed or navigated away entirely.
+window.addEventListener("beforeunload", () => {
+  if (selectedSeats.size && currentShow && navigator.sendBeacon) {
+    const payload = JSON.stringify({ show_id: currentShow.show_id, seats: [...selectedSeats] });
+    navigator.sendBeacon(API_BASE + "/seats/release", new Blob([payload], { type: "application/json" }));
+  }
+});
+
+function startSeatPolling() {
+  if (seatPollTimer) return;   // already running
+  seatPollTimer = setInterval(refreshSeatAvailability, 30000);
+}
+
+function stopSeatPolling() {
+  if (seatPollTimer) { clearInterval(seatPollTimer); seatPollTimer = null; }
+}
+
+async function refreshSeatAvailability() {
+  if (!currentShow) return;
+  try {
+    const data = await api(`/seats?show_id=${currentShow.show_id}`);
+    const freshBooked = new Set(data.booked_seats);
+
+    // If someone else grabbed a seat the current user had selected, drop it
+    // and let them know, rather than silently invalidating their choice.
+    const lost = [...selectedSeats].filter(s => freshBooked.has(s) && !bookedSeats.has(s));
+    if (lost.length) {
+      lost.forEach(s => selectedSeats.delete(s));
+      document.getElementById("seatHint").textContent =
+        `Heads up — ${lost.join(", ")} ${lost.length === 1 ? "was" : "were"} just booked by someone else and ${lost.length === 1 ? "has" : "have"} been deselected.`;
+      updateSummary();
+    }
+
+    bookedSeats = freshBooked;
+    heldByOthers = new Set((data.held_seats || []).filter(s => !selectedSeats.has(s)));
+    drawSeatMap();
+  } catch (e) {
+    // Silent failure — a missed poll isn't worth interrupting the user for.
+  }
+}
+
+document.getElementById("btnBackToBrowse").addEventListener("click", () => {
+  disconnectSeatSocket();
+  releaseAllMyHolds();
+  stopHoldTimer();
+  document.getElementById("bookingView").style.display = "none";
+  document.getElementById("browseView").style.display = "block";
+});
+
+// Visual identity per ticket type — distinct icon + accent so the three
+// tiers read differently at a glance, not just by label text.
+const TICKET_TYPE_STYLE = {
+  "4DX":    { icon: "🎬", color: "var(--gold)" },
+  "IMAX":   { icon: "🎥", color: "var(--platinum)" },
+  "Silver": { icon: "🎟️", color: "#94A3B8" },
+};
+
+function populateTicketTypes() {
+  currentTicketType = TICKET_TYPES[0]?.name;
+  const wrap = document.getElementById("ticketTypes");
+  wrap.innerHTML = TICKET_TYPES.map(t => {
+    const style = TICKET_TYPE_STYLE[t.name] || { icon: "🎫", color: "var(--accent)" };
+    return `
+    <div class="ttype ${t.name === currentTicketType ? 'active' : ''}" data-name="${escapeHtml(t.name)}" style="--type-color:${style.color};">
+      <div class="icon">${style.icon}</div>
+      <div class="name">${escapeHtml(t.name)}</div>
+      <div class="price">₹${t.base_price}</div>
+    </div>
+  `;
+  }).join("");
+  wrap.querySelectorAll(".ttype").forEach(el => {
+    el.addEventListener("click", () => {
+      currentTicketType = el.dataset.name;
+      wrap.querySelectorAll(".ttype").forEach(x => x.classList.remove("active"));
+      el.classList.add("active");
+      updateSummary();
+    });
+  });
+}
+
+async function loadSeatMap() {
+  if (!currentShow) return;
+  document.getElementById("seatHint").textContent = "Loading seat map…";
+  try {
+    const data = await api(`/seats?show_id=${currentShow.show_id}`);
+    currentLayout = data.layout;
+    bookedSeats = new Set(data.booked_seats);
+    selectedSeats = new Set([...selectedSeats].filter(s => !bookedSeats.has(s)));
+    heldByOthers = new Set((data.held_seats || []).filter(s => !selectedSeats.has(s)));
+    drawSeatMap();
+    document.getElementById("seatHint").textContent = desiredSeatCount
+      ? `Select ${desiredSeatCount} seat${desiredSeatCount === 1 ? "" : "s"} from the map below.`
+      : "Click a seat to select it. Click again to deselect.";
+  } catch (e) {
+    document.getElementById("seatHint").textContent = `Could not load seats: ${e.message}`;
+  }
+}
+
+/* ============================================================
+   SEAT MAP DRAWING
+   ============================================================ */
+function sectionForSeat(label) {
+  for (const sec of currentLayout) {
+    const rowLetter = label.match(/^[A-Za-z]+/)[0];
+    if (sec.rows.includes(rowLetter)) return sec.section;
+  }
+  return "Middle";
+}
+
+function tierBadgeText(section) {
+  const mod = SEAT_TIER_MOD[section] ?? 0;
+  if (mod > 0) return `+₹${mod}`;
+  if (mod < 0) return `−₹${Math.abs(mod)}`;
+  return "Base";
+}
+
+function drawSeatMap() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  seatRects = {};
+
+  // ---- Screen bar with fanning glow ----
+  const screenY = 34, screenW = 420, screenH = 14;
+  const screenX = (W - screenW) / 2;
+
+  const fan = ctx.createLinearGradient(0, screenY, 0, screenY + 130);
+  fan.addColorStop(0, "rgba(96,165,250,0.28)");
+  fan.addColorStop(1, "rgba(96,165,250,0)");
+  ctx.fillStyle = fan;
+  ctx.beginPath();
+  ctx.moveTo(screenX + 30, screenY + screenH);
+  ctx.lineTo(screenX + screenW - 30, screenY + screenH);
+  ctx.lineTo(screenX + screenW + 90, screenY + 130);
+  ctx.lineTo(screenX - 90, screenY + 130);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = css('--screen-bg');
+  roundRect(ctx, screenX, screenY, screenW, screenH, 7);
+  ctx.fill();
+  ctx.fillStyle = css('--screen-txt');
+  ctx.font = "700 10px " + css('--ff') || "sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("S  C  R  E  E  N", W / 2, screenY + screenH + 16);
+
+  // ---- Sections ----
+  let y = screenY + 60;
+  const seatW = 30, seatH = 26, gapX = 8, aisleGap = 22, rowGapY = 10, sectionGapY = 30;
+
+  currentLayout.forEach(section => {
+    // section header
+    ctx.textAlign = "left";
+    ctx.fillStyle = css('--txt2');
+    ctx.font = "700 12px " + (css('--ff') || "sans-serif");
+    const headerX = 40;
+    ctx.fillText(section.section, headerX, y);
+
+    // gold badge
+    const badgeText = tierBadgeText(section.section);
+    ctx.font = "700 10px " + (css('--ff') || "sans-serif");
+    const badgeW = ctx.measureText(badgeText).width + 18;
+    const badgeX = headerX + ctx.measureText(section.section).width + 12;
+    ctx.fillStyle = css('--input-bg');
+    roundRect(ctx, badgeX, y - 14, badgeW, 18, 9);
+    ctx.fill();
+    ctx.strokeStyle = css('--border');
+    ctx.stroke();
+    ctx.fillStyle = css('--gold');
+    ctx.textAlign = "center";
+    ctx.fillText(badgeText, badgeX + badgeW / 2, y - 1);
+    ctx.textAlign = "left";
+
+    y += 20;
+
+    section.rows.forEach(rowLetter => {
+      // total row width for centering
+      let totalW = section.cols * (seatW + gapX) - gapX;
+      section.aisles_after.forEach(() => totalW += aisleGap);
+      let x = (W - totalW) / 2;
+
+      // row label
+      ctx.fillStyle = css('--txt3');
+      ctx.font = "700 11px " + (css('--ff-mono') || "monospace");
+      ctx.textAlign = "right";
+      ctx.fillText(rowLetter, x - 12, y + seatH / 2 + 4);
+      ctx.textAlign = "left";
+
+      for (let c = 1; c <= section.cols; c++) {
+        const label = `${rowLetter}${c}`;
+        const rect = { x, y, w: seatW, h: seatH, section: section.section };
+        seatRects[label] = rect;
+        drawSeat(x, y, seatW, seatH, seatState(label), hoveredSeat === label, seatScale(label));
+
+        x += seatW + gapX;
+        if (section.aisles_after.includes(c)) x += aisleGap;
+      }
+      y += seatH + rowGapY;
+    });
+
+    y += sectionGapY;
+  });
+
+  const targetHeight = Math.max(440, y + 20);
+  if (canvas.height !== targetHeight) {
+    // NOTE: writing to canvas.height always clears the canvas, even to the
+    // same value — so only do it, and only redraw, when it truly changes.
+    canvas.height = targetHeight;
+    drawSeatMap();
+  }
+}
+
+function seatState(label) {
+  if (bookedSeats.has(label)) return "booked";
+  if (selectedSeats.has(label)) return "selected";
+  if (heldByOthers.has(label)) return "held";
+  return "available";
+}
+
+/* ============================================================
+   ANIMATED SEAT SELECTION — a quick "pop" whenever a seat toggles
+   ============================================================ */
+let seatAnimStart = {};   // label -> performance.now() timestamp
+let seatAnimRunning = false;
+const SEAT_ANIM_MS = 220;
+
+function triggerSeatAnimation(label) {
+  seatAnimStart[label] = performance.now();
+  if (!seatAnimRunning) {
+    seatAnimRunning = true;
+    requestAnimationFrame(seatAnimTick);
+  }
+}
+
+function seatAnimTick(now) {
+  let stillGoing = false;
+  for (const label in seatAnimStart) {
+    if (now - seatAnimStart[label] < SEAT_ANIM_MS) stillGoing = true;
+    else delete seatAnimStart[label];
+  }
+  drawSeatMap();
+  if (stillGoing) {
+    requestAnimationFrame(seatAnimTick);
+  } else {
+    seatAnimRunning = false;
+  }
+}
+
+function seatScale(label) {
+  const start = seatAnimStart[label];
+  if (start === undefined) return 1;
+  const t = Math.min((performance.now() - start) / SEAT_ANIM_MS, 1);
+  // Pops up to +22% scale at the midpoint, settles back to normal by the end.
+  return 1 + 0.22 * Math.sin(t * Math.PI);
+}
+
+function drawSeat(x, y, w, h, state, hover, scale = 1) {
+  let bodyColor, backColor, textColor;
+  if (state === "booked") {
+    bodyColor = css('--seat-booked'); backColor = "#141428"; textColor = css('--seat-txt-bk');
+  } else if (state === "held") {
+    bodyColor = css('--warn'); backColor = "#7A4E0A"; textColor = "#2A1B03";
+  } else if (state === "selected") {
+    bodyColor = hover ? css('--seat-sel-h') : css('--seat-sel');
+    backColor = css('--seat-sel-d'); textColor = css('--seat-txt-sel');
+  } else {
+    bodyColor = hover ? css('--seat-avail-h') : css('--seat-avail');
+    backColor = css('--divider'); textColor = css('--seat-txt');
+  }
+
+  const needsTransform = scale !== 1;
+  if (needsTransform) {
+    const cx = x + w / 2, cy = y + h / 2;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-cx, -cy);
+  }
+
+  // seatback (wider, taller rounded rect behind)
+  ctx.fillStyle = backColor;
+  roundRect(ctx, x - 1, y - 1, w + 2, h + 2, 7);
+  ctx.fill();
+
+  // headrest
+  const hrW = w * 0.62, hrH = h * 0.30;
+  ctx.fillStyle = bodyColor;
+  roundRect(ctx, x + (w - hrW) / 2, y + 2, hrW, hrH, 4);
+  ctx.fill();
+
+  // seat body
+  const bodyY = y + hrH + 4;
+  const bodyH = h - hrH - 5;
+  roundRect(ctx, x + 1, bodyY, w - 2, bodyH, 5);
+  ctx.fill();
+
+  // subtle seat-tread line for texture
+  ctx.strokeStyle = textColor;
+  ctx.globalAlpha = 0.25;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + 4, bodyY + 3);
+  ctx.lineTo(x + w - 4, bodyY + 3);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  if (needsTransform) ctx.restore();
+}
+
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function seatAt(px, py) {
+  for (const [label, r] of Object.entries(seatRects)) {
+    if (px >= r.x - 2 && px <= r.x + r.w + 2 && py >= r.y - 2 && py <= r.y + r.h + 2) {
+      return label;
+    }
+  }
+  return null;
+}
+
+const tooltip = document.getElementById("seatTooltip");
+
+function updateTooltip(seat, clientX, clientY) {
+  if (!seat) { tooltip.classList.remove("show"); return; }
+  const section = sectionForSeat(seat);
+  const wrapRect = tooltip.parentElement.getBoundingClientRect();
+  const left = clientX - wrapRect.left;
+  const top = clientY - wrapRect.top;
+
+  if (bookedSeats.has(seat)) {
+    tooltip.innerHTML = `Seat ${seat} · ${escapeHtml(section)} Section · <span class="booked-tag">Booked</span>`;
+  } else if (heldByOthers.has(seat)) {
+    tooltip.innerHTML = `Seat ${seat} · ${escapeHtml(section)} Section · <span class="booked-tag">Reserved by another user</span>`;
+  } else {
+    const price = priceForSeat(seat);
+    tooltip.innerHTML = `Seat ${seat} · ${escapeHtml(section)} Section · <span class="price">₹${price}</span>`;
+  }
+  tooltip.style.left = left + "px";
+  tooltip.style.top = top + "px";
+  tooltip.classList.add("show");
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+  const px = (e.clientX - rect.left) * scaleX, py = (e.clientY - rect.top) * scaleY;
+  const seat = seatAt(px, py);
+  canvas.style.cursor = (seat && !bookedSeats.has(seat)) ? "pointer" : "default";
+  if (seat !== hoveredSeat) { hoveredSeat = seat; drawSeatMap(); }
+  updateTooltip(seat, e.clientX, e.clientY);
+});
+canvas.addEventListener("mouseleave", () => { hoveredSeat = null; drawSeatMap(); tooltip.classList.remove("show"); });
+
+canvas.addEventListener("click", async (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+  const px = (e.clientX - rect.left) * scaleX, py = (e.clientY - rect.top) * scaleY;
+  const seat = seatAt(px, py);
+  if (!seat || bookedSeats.has(seat) || heldByOthers.has(seat)) return;
+
+  if (selectedSeats.has(seat)) {
+    selectedSeats.delete(seat);
+    triggerSeatAnimation(seat);
+    drawSeatMap();
+    updateSummary();
+    updateHoldTimerVisibility();
+    releaseSeats([seat]);
+    return;
+  }
+
+  if (desiredSeatCount && selectedSeats.size >= desiredSeatCount) {
+    document.getElementById("seatHint").textContent =
+      `You asked for ${desiredSeatCount} seat${desiredSeatCount === 1 ? "" : "s"} — deselect one before picking another, or change your count.`;
+    return;
+  }
+
+  try {
+    const result = await api("/seats/hold", {
+      method: "POST",
+      body: JSON.stringify({ show_id: currentShow.show_id, seats: [seat] }),
+    });
+    if (result.held.includes(seat)) {
+      selectedSeats.add(seat);
+      startOrExtendHoldTimer(result.held_until);
+      triggerSeatAnimation(seat);
+    } else {
+      heldByOthers.add(seat);
+      document.getElementById("seatHint").textContent = `Seat ${seat} was just reserved by someone else — try another.`;
+    }
+  } catch (e2) {
+    document.getElementById("seatHint").textContent = `Could not reserve ${seat}: ${e2.message}`;
+  }
+  drawSeatMap();
+  updateSummary();
+});
+
+/* ============================================================
+   "HOW MANY SEATS?" STEP
+   ============================================================ */
+document.getElementById("btnSeatCount").addEventListener("click", openSeatCountModal);
+
+function openSeatCountModal() {
+  renderSeatCountGrid();
+  renderTierRows();
+  openModal("modalSeatCount");
+}
+
+function renderSeatCountGrid() {
+  const grid = document.getElementById("seatCountGrid");
+  const options = Array.from({ length: 10 }, (_, i) => i + 1);
+  grid.innerHTML = options.map(n => `
+    <button class="count-btn ${n === (desiredSeatCount || 2) ? 'active' : ''}" data-count="${n}">${n}</button>
+  `).join("");
+  grid.querySelectorAll(".count-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      grid.querySelectorAll(".count-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      btn.dataset.selected = "1";
+    });
+  });
+}
+
+function sectionAvailability(section) {
+  const totalSeats = section.rows.length * section.cols;
+  let bookedCount = 0;
+  section.rows.forEach(r => {
+    for (let c = 1; c <= section.cols; c++) {
+      if (bookedSeats.has(`${r}${c}`)) bookedCount++;
+    }
+  });
+  const ratio = totalSeats ? bookedCount / totalSeats : 0;
+  let status = "available", label = "Available";
+  if (ratio >= 1) { status = "full"; label = "Sold Out"; }
+  else if (ratio >= 0.8) { status = "almost"; label = "Almost Full"; }
+  return { totalSeats, bookedCount, status, label };
+}
+
+function renderTierRows() {
+  const wrap = document.getElementById("seatCountTiers");
+  if (!currentLayout.length) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = currentLayout.map(section => {
+    const price = priceForSection(section.section);
+    const av = sectionAvailability(section);
+    return `
+      <div class="tier-row">
+        <div>
+          <div class="tier-name">${escapeHtml(section.section)} rows</div>
+          <div class="tier-price">₹${price}</div>
+        </div>
+        <div class="tier-status ${av.status}">${av.label}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+document.getElementById("btnConfirmSeatCount").addEventListener("click", () => {
+  const active = document.querySelector("#seatCountGrid .count-btn.active");
+  desiredSeatCount = active ? parseInt(active.dataset.count, 10) : (desiredSeatCount || 2);
+  document.getElementById("btnSeatCount").textContent = `${desiredSeatCount} seat${desiredSeatCount === 1 ? "" : "s"} ✎`;
+
+  // Trim any existing over-selection down to the new count
+  if (selectedSeats.size > desiredSeatCount) {
+    selectedSeats = new Set([...selectedSeats].slice(0, desiredSeatCount));
+    drawSeatMap();
+  }
+  updateSummary();
+  closeModal("modalSeatCount");
+  document.getElementById("seatHint").textContent =
+    `Select ${desiredSeatCount} seat${desiredSeatCount === 1 ? "" : "s"} from the map below.`;
+});
+
+/* ============================================================
+   PRICING + SUMMARY
+   ============================================================ */
+function addonSubtotal() {
+  return ADDON_CATALOG.reduce((sum, a) => sum + (selectedAddons[a.item_id] || 0) * a.price, 0);
+}
+
+function renderAddonList() {
+  const wrap = document.getElementById("addonList");
+  if (!ADDON_CATALOG.length) { wrap.innerHTML = `<div class="hint">Menu unavailable.</div>`; return; }
+  wrap.innerHTML = ADDON_CATALOG.map(a => {
+    const qty = selectedAddons[a.item_id] || 0;
+    return `
+      <div class="addon-row">
+        <div class="addon-info">
+          <span class="addon-icon">${a.icon}</span>
+          <div>
+            <div class="addon-name">${escapeHtml(a.name)}</div>
+            <div class="addon-price">₹${a.price}</div>
+          </div>
+        </div>
+        <div class="addon-stepper">
+          <button data-id="${a.item_id}" data-dir="-1" ${qty === 0 ? "disabled" : ""}>−</button>
+          <span class="qty">${qty}</span>
+          <button data-id="${a.item_id}" data-dir="1">+</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+  wrap.querySelectorAll(".addon-stepper button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const dir = parseInt(btn.dataset.dir, 10);
+      const next = Math.max(0, Math.min(10, (selectedAddons[id] || 0) + dir));
+      if (next === 0) delete selectedAddons[id];
+      else selectedAddons[id] = next;
+      renderAddonList();
+      updateSummary();
+    });
+  });
+}
+
+function priceForSeat(label) {
+  const base = TICKET_TYPES.find(t => t.name === currentTicketType)?.base_price || 0;
+  const section = sectionForSeat(label);
+  const mod = SEAT_TIER_MOD[section] ?? 0;
+  return Math.max(base + mod, MIN_SEAT_PRICE);
+}
+
+function priceForSection(section) {
+  const base = TICKET_TYPES.find(t => t.name === currentTicketType)?.base_price || 0;
+  const mod = SEAT_TIER_MOD[section] ?? 0;
+  return Math.max(base + mod, MIN_SEAT_PRICE);
+}
+
+function updateSummary() {
+  const chipsWrap = document.getElementById("selectedChips");
+  if (selectedSeats.size === 0) {
+    chipsWrap.innerHTML = `<span class="chip empty">No seats selected yet</span>`;
+  } else {
+    chipsWrap.innerHTML = [...selectedSeats].sort().map(s => `<span class="chip">${s}</span>`).join("");
+  }
+  const seatSubtotal = [...selectedSeats].reduce((sum, s) => sum + priceForSeat(s), 0);
+  const addonTotal = addonSubtotal();
+  const combinedSubtotal = seatSubtotal + addonTotal;
+  const tax = Math.round(combinedSubtotal * TAX_RATE);
+  const total = combinedSubtotal + tax;
+
+  const addonRow = document.getElementById("addonSubtotalRow");
+  if (addonTotal > 0) {
+    addonRow.style.display = "flex";
+    document.getElementById("addonSubtotalAmt").textContent = "₹" + addonTotal.toLocaleString("en-IN");
+  } else {
+    addonRow.style.display = "none";
+  }
+
+  document.getElementById("taxLabel").textContent = `Tax (${Math.round(TAX_RATE * 100)}%)`;
+  document.getElementById("subtotalAmt").textContent = "₹" + seatSubtotal.toLocaleString("en-IN");
+  document.getElementById("taxAmt").textContent = "₹" + tax.toLocaleString("en-IN");
+  document.getElementById("totalAmt").textContent = total.toLocaleString("en-IN");
+}
+
+/* ============================================================
+   BOOKING
+   ============================================================ */
+function buildBookingPayload() {
+  return {
+    show_id: currentShow ? currentShow.show_id : null,
+    ticket_type: currentTicketType,
+    seats: [...selectedSeats],
+    addons: Object.entries(selectedAddons).map(([item_id, qty]) => ({ item_id, qty })),
+  };
+}
+
+document.getElementById("btnBook").addEventListener("click", () => {
+  const errEl = document.getElementById("formError");
+  const okEl = document.getElementById("formSuccess");
+  errEl.textContent = ""; okEl.textContent = "";
+
+  const payload = buildBookingPayload();
+
+  if (!payload.show_id) {
+    errEl.textContent = "No showtime selected. Please go back and pick a showtime.";
+    return;
+  }
+  if (payload.seats.length === 0) {
+    errEl.textContent = "Please select at least one seat.";
+    return;
+  }
+
+  if (!currentUser) {
+    openAuthModal(true);
+    return;
+  }
+
+  openPaymentModal(payload);
+});
+
+let pendingBookingPayload = null;
+let selectedPaymentMode = "UPI";
+let appliedPromo = null;   // {code, discount_amount, message}
+
+function openPaymentModal(payload) {
+  pendingBookingPayload = payload;
+  selectedPaymentMode = "UPI";
+  appliedPromo = null;
+  document.getElementById("payError").textContent = "";
+  document.getElementById("promoError").textContent = "";
+  document.getElementById("promoInput").value = "";
+  document.getElementById("promoApplied").style.display = "none";
+  document.getElementById("payProcessing").style.display = "none";
+  document.getElementById("btnSubmitPayment").style.display = "block";
+  document.getElementById("payCloseBtn").style.display = "block";
+
+  recalcPaymentBreakdown();
+
+  document.querySelectorAll("#payTabs .pay-tab").forEach(t => t.classList.remove("active"));
+  document.querySelector('#payTabs .pay-tab[data-mode="UPI"]').classList.add("active");
+  ["UPI", "Card", "Wallet", "Cash"].forEach(m => {
+    document.getElementById(`payPanel${m}`).style.display = m === "UPI" ? "block" : "none";
+  });
+
+  openModal("modalPayment");
+}
+
+function recalcPaymentBreakdown() {
+  const seatTotal = pendingBookingPayload.seats.reduce((sum, s) => sum + priceForSeat(s), 0);
+  const addonTotal = addonSubtotal();
+  const combined = seatTotal + addonTotal;
+  const discount = appliedPromo ? appliedPromo.discount_amount : 0;
+  const discounted = combined - discount;
+  const tax = Math.round(discounted * TAX_RATE);
+  const payable = discounted + tax;
+
+  document.getElementById("payBreakdownSubtotal").textContent = "₹" + combined.toLocaleString("en-IN");
+  document.getElementById("payBreakdownTax").textContent = "₹" + tax.toLocaleString("en-IN");
+  const discountRow = document.getElementById("payBreakdownDiscountRow");
+  if (discount > 0) {
+    discountRow.style.display = "flex";
+    document.getElementById("payBreakdownDiscount").textContent = "−₹" + discount.toLocaleString("en-IN");
+  } else {
+    discountRow.style.display = "none";
+  }
+  document.getElementById("payAmount").textContent = payable.toLocaleString("en-IN");
+  document.getElementById("payButtonAmount").textContent = payable.toLocaleString("en-IN");
+  return payable;
+}
+
+document.getElementById("btnApplyPromo").addEventListener("click", async () => {
+  const code = document.getElementById("promoInput").value.trim();
+  const errEl = document.getElementById("promoError");
+  errEl.textContent = "";
+  if (!code) { errEl.textContent = "Enter a promo code."; return; }
+
+  try {
+    const result = await api("/promos/validate", {
+      method: "POST",
+      body: JSON.stringify({
+        code, ticket_type: currentTicketType, seats: pendingBookingPayload.seats,
+        addons: pendingBookingPayload.addons,
+      }),
+    });
+    if (!result.valid) {
+      errEl.textContent = result.message || "That code isn't valid.";
+      return;
+    }
+    appliedPromo = result;
+    document.getElementById("promoApplied").style.display = "flex";
+    document.getElementById("promoAppliedText").textContent = `${result.code} applied — ${result.message}`;
+    document.getElementById("promoInput").value = "";
+    recalcPaymentBreakdown();
+    toast(`Promo code ${result.code} applied!`, "success");
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+});
+
+document.getElementById("btnRemovePromo").addEventListener("click", () => {
+  appliedPromo = null;
+  document.getElementById("promoApplied").style.display = "none";
+  document.getElementById("promoError").textContent = "";
+  recalcPaymentBreakdown();
+});
+
+document.querySelectorAll("#payTabs .pay-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    selectedPaymentMode = tab.dataset.mode;
+    document.querySelectorAll("#payTabs .pay-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    ["UPI", "Card", "Wallet", "Cash"].forEach(m => {
+      document.getElementById(`payPanel${m}`).style.display = m === selectedPaymentMode ? "block" : "none";
+    });
+    document.getElementById("payError").textContent = "";
+  });
+});
+
+function validatePaymentDetails() {
+  if (selectedPaymentMode === "UPI") {
+    const v = document.getElementById("payUpiId").value.trim();
+    if (!/^[\w.\-]+@[\w.\-]+$/.test(v)) return "Enter a valid UPI ID, e.g. yourname@upi";
+  } else if (selectedPaymentMode === "Card") {
+    const num = document.getElementById("payCardNumber").value.replace(/\s/g, "");
+    const exp = document.getElementById("payCardExpiry").value.trim();
+    const cvv = document.getElementById("payCardCvv").value.trim();
+    if (!/^\d{13,19}$/.test(num)) return "Enter a valid card number.";
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp)) return "Enter expiry as MM/YY.";
+    if (!/^\d{3}$/.test(cvv)) return "Enter a valid 3-digit CVV.";
+  }
+  // Wallet and Cash need no extra input.
+  return null;
+}
+
+document.getElementById("btnSubmitPayment").addEventListener("click", async () => {
+  const errEl = document.getElementById("payError");
+  errEl.textContent = "";
+
+  const validationError = validatePaymentDetails();
+  if (validationError) { errEl.textContent = validationError; return; }
+
+  const btn = document.getElementById("btnSubmitPayment");
+  const processing = document.getElementById("payProcessing");
+  const processingText = document.getElementById("payProcessingText");
+  btn.style.display = "none";
+  document.getElementById("payCloseBtn").style.display = "none";
+  processing.style.display = "flex";
+  processingText.textContent = "Processing payment…";
+
+  // Fake gateway delay so the payment step feels real before we actually book.
+  await new Promise(r => setTimeout(r, 1400));
+  processingText.textContent = "Confirming with bank…";
+  await new Promise(r => setTimeout(r, 700));
+
+  const paymentModeLabel = {
+    UPI: "UPI", Card: "Credit/Debit Card", Wallet: "Hamilton Wallet", Cash: "Pay at Counter",
+  }[selectedPaymentMode];
+
+  try {
+    const result = await api("/book", {
+      method: "POST",
+      body: JSON.stringify({
+        ...pendingBookingPayload,
+        payment_mode: paymentModeLabel,
+        promo_code: appliedPromo ? appliedPromo.code : null,
+      }),
+    });
+    closeModal("modalPayment");
+    document.getElementById("formSuccess").textContent = "Booking confirmed!";
+    selectedSeats.clear();
+    selectedAddons = {};
+    stopHoldTimer();
+    renderAddonList();
+    updateSummary();
+    await loadSeatMap();
+    showConfirm(result);
+  } catch (e) {
+    processing.style.display = "none";
+    btn.style.display = "block";
+    document.getElementById("payCloseBtn").style.display = "block";
+    errEl.textContent = e.message;
+  }
+});
+
+function showConfirm(result) {
+  document.getElementById("cfCid").textContent = result.customer_id;
+  document.getElementById("cfTotal").textContent = "₹" + result.total_amount.toLocaleString("en-IN");
+  document.getElementById("cfSubtotal").textContent = "₹" + result.subtotal.toLocaleString("en-IN");
+  const cfDiscountRow = document.getElementById("cfDiscountRow");
+  if (result.discount_amount > 0) {
+    cfDiscountRow.style.display = "block";
+    document.getElementById("cfDiscount").textContent =
+      `−₹${result.discount_amount.toLocaleString("en-IN")} (${result.promo_code})`;
+  } else {
+    cfDiscountRow.style.display = "none";
+  }
+  document.getElementById("cfTax").textContent = "₹" + result.tax_amount.toLocaleString("en-IN");
+  document.getElementById("cfMovie").textContent = result.movie;
+  document.getElementById("cfCinema").textContent = result.cinema_name;
+  document.getElementById("cfShow").textContent = `${result.show_date} · ${result.show_time}`;
+  document.getElementById("cfSeats").textContent = result.seats.join(", ");
+  const cfAddonsRow = document.getElementById("cfAddonsRow");
+  if (result.addons && result.addons.length) {
+    cfAddonsRow.style.display = "block";
+    document.getElementById("cfAddons").textContent =
+      result.addons.map(a => `${a.icon} ${a.name} ×${a.qty}`).join(", ");
+  } else {
+    cfAddonsRow.style.display = "none";
+  }
+  document.getElementById("cfReceiptBtn").onclick = () => showReceiptPreview(API_BASE + result.receipt_url);
+  openModal("modalConfirm");
+}
+
+/* ============================================================
+   MY BOOKINGS — the logged-in account's booking history
+   ============================================================ */
+document.getElementById("btnMyBookings").addEventListener("click", async () => {
+  openModal("modalMyBookings");
+  await loadMyBookings();
+});
+
+async function loadMyBookings() {
+  const errEl = document.getElementById("myBookingsError");
+  const listEl = document.getElementById("myBookingsList");
+  errEl.textContent = "";
+  listEl.innerHTML = `<div class="hint">Loading…</div>`;
+  try {
+    const bookings = await api("/my-bookings");
+    if (!bookings.length) {
+      listEl.innerHTML = `<div class="hint">You haven't booked anything yet.</div>`;
+      return;
+    }
+    listEl.innerHTML = bookings.map(b => `
+      <div class="mb-card">
+        <div class="mb-hdr">
+          <div>
+            <div class="mb-movie">${escapeHtml(b.movie)}</div>
+            <div class="mb-sub">${escapeHtml(b.cinema_name)} · ${escapeHtml(b.show_date)} · ${escapeHtml(b.show_time)}</div>
+          </div>
+          <div class="mb-amt">₹${b.total_amount.toLocaleString("en-IN")}</div>
+        </div>
+        <div class="mb-seats">Seats: ${escapeHtml(b.seats.join(", "))} · ${escapeHtml(b.ticket_type)}</div>
+        <div class="mb-actions">
+          <button class="btn secondary small mb-receipt" data-cid="${escapeHtml(b.customer_id)}">View receipt</button>
+          <button class="btn danger small mb-cancel" data-cid="${escapeHtml(b.customer_id)}">Cancel</button>
+        </div>
+      </div>
+    `).join("");
+
+    listEl.querySelectorAll(".mb-receipt").forEach(btn => {
+      btn.addEventListener("click", () => showReceiptPreview(API_BASE + `/receipt/${btn.dataset.cid}`));
+    });
+    listEl.querySelectorAll(".mb-cancel").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (!confirm(`Cancel booking ${btn.dataset.cid}? This can't be undone.`)) return;
+        try {
+          await api(`/booking/${encodeURIComponent(btn.dataset.cid)}`, { method: "DELETE" });
+          toast("Booking cancelled.", "success");
+          await loadMyBookings();
+          await loadSeatMap();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      });
+    });
+  } catch (e) {
+    listEl.innerHTML = "";
+    errEl.textContent = e.message;
+  }
+}
+
+/* ============================================================
+   ADMIN — same login as everyone else, gated by role
+   ============================================================ */
+document.getElementById("btnAdminPanel").addEventListener("click", () => {
+  openModal("modalAdminPanel");
+  startAdminSessionTimer();
+  setAdminTab("bookings");
+  adminSearch();
+});
+
+function setAdminTab(mode) {
+  const isAnalytics = mode === "analytics";
+  document.getElementById("adminTabBookings").classList.toggle("active", !isAnalytics);
+  document.getElementById("adminTabAnalytics").classList.toggle("active", isAnalytics);
+  document.getElementById("adminPaneBookings").style.display = isAnalytics ? "none" : "block";
+  document.getElementById("adminPaneAnalytics").style.display = isAnalytics ? "block" : "none";
+  if (isAnalytics) loadAnalytics();
+}
+document.getElementById("adminTabBookings").addEventListener("click", () => setAdminTab("bookings"));
+document.getElementById("adminTabAnalytics").addEventListener("click", () => setAdminTab("analytics"));
+
+/* ============================================================
+   ADMIN ANALYTICS DASHBOARD
+   ============================================================ */
+let chartRevenue = null, chartMovies = null, chartTicketTypes = null, chartCinemas = null;
+
+const CHART_COLORS = ["#E03A50", "#FBBF24", "#22C55E", "#60A5FA", "#A78BFA", "#F59E0B", "#F472B6", "#34D399"];
+
+async function loadAnalytics() {
+  const hint = document.getElementById("analyticsHint");
+  hint.textContent = "Loading…";
+  try {
+    const data = await api("/admin/analytics?days=14");
+    hint.textContent = "";
+
+    document.getElementById("kpiRevenue").textContent = "₹" + data.total_revenue.toLocaleString("en-IN");
+    document.getElementById("kpiBookings").textContent = data.total_bookings.toLocaleString("en-IN");
+    document.getElementById("kpiTickets").textContent = data.tickets_sold.toLocaleString("en-IN");
+    document.getElementById("kpiOccupancy").textContent = data.avg_occupancy_pct + "%";
+
+    renderRevenueChart(data.daily_series);
+    renderMoviesChart(data.popular_movies);
+    renderTicketTypesChart(data.ticket_type_breakdown);
+    renderCinemasChart(data.cinema_breakdown);
+
+    if (!data.total_bookings) {
+      hint.textContent = "No bookings yet — charts will fill in once people start booking.";
+    }
+  } catch (e) {
+    hint.textContent = `Could not load analytics: ${e.message}`;
+  }
+}
+
+function chartTheme() {
+  return {
+    grid: "rgba(148,163,184,.12)",
+    text: "#94A3B8",
+  };
+}
+
+function renderRevenueChart(series) {
+  const ctx = document.getElementById("chartRevenue");
+  const theme = chartTheme();
+  if (chartRevenue) chartRevenue.destroy();
+  chartRevenue = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: series.map(d => d.date.slice(5)),   // MM-DD
+      datasets: [{
+        label: "Revenue (₹)",
+        data: series.map(d => d.revenue),
+        backgroundColor: "#E03A50",
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: theme.text }, grid: { color: "transparent" } },
+        y: { ticks: { color: theme.text }, grid: { color: theme.grid }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+function renderMoviesChart(movies) {
+  const ctx = document.getElementById("chartMovies");
+  const theme = chartTheme();
+  if (chartMovies) chartMovies.destroy();
+  chartMovies = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: movies.map(m => m.movie),
+      datasets: [{
+        label: "Tickets sold",
+        data: movies.map(m => m.tickets),
+        backgroundColor: "#60A5FA",
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: theme.text }, grid: { color: theme.grid }, beginAtZero: true },
+        y: { ticks: { color: theme.text }, grid: { color: "transparent" } },
+      },
+    },
+  });
+}
+
+function renderTicketTypesChart(breakdown) {
+  const ctx = document.getElementById("chartTicketTypes");
+  const theme = chartTheme();
+  if (chartTicketTypes) chartTicketTypes.destroy();
+  chartTicketTypes = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: breakdown.map(b => b.ticket_type),
+      datasets: [{
+        data: breakdown.map(b => b.count),
+        backgroundColor: CHART_COLORS,
+        borderColor: "#1C1C38",
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "bottom", labels: { color: theme.text, boxWidth: 12, padding: 12 } } },
+    },
+  });
+}
+
+function renderCinemasChart(breakdown) {
+  const ctx = document.getElementById("chartCinemas");
+  const theme = chartTheme();
+  if (chartCinemas) chartCinemas.destroy();
+  chartCinemas = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: breakdown.map(b => b.cinema_name),
+      datasets: [{
+        data: breakdown.map(b => b.revenue),
+        backgroundColor: CHART_COLORS,
+        borderColor: "#1C1C38",
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "bottom", labels: { color: theme.text, boxWidth: 12, padding: 12 } } },
+    },
+  });
+}
+
+/* ============================================================
+   ADMIN SESSION TIMEOUT — auto-logout after 10 minutes idle
+   ============================================================ */
+const ADMIN_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
+let adminIdleTimer = null;
+
+function startAdminSessionTimer() {
+  clearAdminSessionTimer();
+  adminIdleTimer = setTimeout(adminSessionExpired, ADMIN_SESSION_TIMEOUT_MS);
+}
+
+function clearAdminSessionTimer() {
+  if (adminIdleTimer) { clearTimeout(adminIdleTimer); adminIdleTimer = null; }
+}
+
+function resetAdminSessionTimer() {
+  if (adminIdleTimer) startAdminSessionTimer();  // only reset if a session is actually active
+}
+
+function adminSessionExpired() {
+  clearAdminSessionTimer();
+  closeModal("modalAdminPanel");
+  clearSession();
+  openAuthModal(false);
+  document.getElementById("authError").textContent =
+    "Your admin session timed out after 10 minutes of inactivity. Please log in again.";
+}
+
+["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+  document.getElementById("modalAdminPanel").addEventListener(evt, resetAdminSessionTimer);
+});
+
+async function adminSearch() {
+  const movie = document.getElementById("adSearchMovie").value.trim();
+  const cid = document.getElementById("adSearchCid").value.trim();
+  const qs = new URLSearchParams();
+  if (movie) qs.set("movie", movie);
+  if (cid) qs.set("cid", cid);
+  try {
+    const rows = await api(`/admin/bookings?${qs.toString()}`);
+    const tbody = document.getElementById("adminTbody");
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><input type="radio" name="adminRow" value="${escapeHtml(r.customer_id)}"></td>
+        <td style="font-family:var(--ff-mono); color:var(--gold)">${escapeHtml(r.customer_id)}</td>
+        <td>${escapeHtml(r.movie)}</td>
+        <td>${escapeHtml(r.cinema_name)}</td>
+        <td>${escapeHtml(r.show_date)} ${escapeHtml(r.show_time)}</td>
+        <td>${escapeHtml(r.seats.join(", "))}</td>
+        <td>${escapeHtml(r.ticket_type)}</td>
+        <td>${r.total_amount.toLocaleString("en-IN")}</td>
+        <td>${escapeHtml(r.booked_on)}</td>
+      </tr>
+    `).join("") || `<tr><td colspan="9" style="text-align:center; color:var(--txt3); padding:20px;">No bookings found.</td></tr>`;
+  } catch (e) {
+    if (e.message.toLowerCase().includes("token") || e.message.toLowerCase().includes("auth") || e.message.toLowerCase().includes("admin")) {
+      closeModal("modalAdminPanel");
+      clearSession();
+      openAuthModal(false);
+      document.getElementById("authError").textContent = "Session expired. Please log in again.";
+    } else {
+      toast(e.message, "error");
+    }
+  }
+}
+
+document.getElementById("adSearchBtn").addEventListener("click", adminSearch);
+document.getElementById("adRefreshBtn").addEventListener("click", () => {
+  document.getElementById("adSearchMovie").value = "";
+  document.getElementById("adSearchCid").value = "";
+  adminSearch();
+});
+document.getElementById("adSearchMovie").addEventListener("keydown", (e) => { if (e.key === "Enter") adminSearch(); });
+document.getElementById("adSearchCid").addEventListener("keydown", (e) => { if (e.key === "Enter") adminSearch(); });
+
+document.getElementById("adCancelBtn").addEventListener("click", async () => {
+  const sel = document.querySelector('input[name="adminRow"]:checked');
+  if (!sel) { toast("Select a booking row first.", "warn"); return; }
+  const cid = sel.value;
+  if (!confirm(`Cancel booking ${cid}?`)) return;
+  try {
+    await api(`/admin/booking/${encodeURIComponent(cid)}`, { method: "DELETE" });
+    toast(`Booking ${cid} cancelled.`, "success");
+    await adminSearch();
+  } catch (e) {
+    toast(e.message, "error");
+  }
+});
+
+/* ============================================================
+   MODAL HELPERS
+   ============================================================ */
+/* ============================================================
+   IN-APP RECEIPT PREVIEW
+   ============================================================ */
+let currentReceiptUrl = null;
+
+function showReceiptPreview(url) {
+  currentReceiptUrl = url;
+  document.getElementById("receiptFrame").src = url;
+  openModal("modalReceipt");
+}
+
+document.getElementById("receiptOpenTabBtn").addEventListener("click", () => {
+  if (currentReceiptUrl) window.open(currentReceiptUrl, "_blank");
+});
+
+document.getElementById("receiptDownloadPdfBtn").addEventListener("click", () => {
+  if (!currentReceiptUrl) return;
+  const a = document.createElement("a");
+  a.href = currentReceiptUrl + "/pdf";
+  a.download = "";   // filename comes from the server's Content-Disposition header
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+document.getElementById("receiptPrintBtn").addEventListener("click", () => {
+  const frame = document.getElementById("receiptFrame");
+  try {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+  } catch (e) {
+    // Cross-origin or not-yet-loaded — fall back to opening it directly.
+    if (currentReceiptUrl) window.open(currentReceiptUrl, "_blank");
+  }
+});
+
+function openModal(id) { document.getElementById(id).classList.add("show"); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove("show");
+  if (id === "modalAdminPanel") clearAdminSessionTimer();
+}
+
+function bindStaticEvents() {
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll(".overlay").forEach(ov => {
+    ov.addEventListener("click", (e) => { if (e.target === ov) ov.classList.remove("show"); });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") document.querySelectorAll(".overlay.show").forEach(ov => ov.classList.remove("show"));
+  });
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+function toast(message, type = "info", duration = 4000) {
+  const container = document.getElementById("toastContainer");
+  const icons = { success: "✅", error: "⚠️", warn: "⏳", info: "ℹ️" };
+  const el = document.createElement("div");
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <span class="icon">${icons[type] || icons.info}</span>
+    <span class="msg">${escapeHtml(message)}</span>
+    <button class="close" aria-label="Dismiss">&times;</button>
+  `;
+  const remove = () => {
+    el.classList.add("leaving");
+    setTimeout(() => el.remove(), 180);
+  };
+  el.querySelector(".close").addEventListener("click", remove);
+  container.appendChild(el);
+  setTimeout(remove, duration);
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+</script>
+</body>
+</html>
