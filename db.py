@@ -1,3 +1,4 @@
+
 # ==============================================================================
 # db.py  —  ReelKart Theatres  |  Database helpers
 # v3: multi-cinema / multi-showtime data model.
@@ -33,20 +34,34 @@ DB_CONFIG = {
 
 # ── Business constants ─────────────────────────────────────────────────────────
 BASE_PRICES    = {"4DX": 2200, "IMAX": 1200, "Silver": 750}
-SEAT_TIER_MOD  = {"Front": 300, "Middle": 0, "Back": -150}
 MIN_SEAT_PRICE = 150
 
+# Seat tier modifiers — relative to the "Normal" tier (₹0), derived from the
+# reference IMAX pricing: Recliner ₹1500, Premium Plus ₹680, Premium XL ₹700,
+# Premium ₹660, Executive ₹640, Executive XL ₹640, Normal ₹600. Whichever
+# ticket type (show type) the person picks, its base price stands in for
+# "Normal", and every other tier is priced relative to that.
+SEAT_TIER_MOD = {
+    "Recliner":      1800,   # 1500 - 600
+    "Premium Plus":  1200,   #  680 - 600
+    "Premium XL":     800,   #  700 - 600
+    "Premium":        460,   #  660 - 600
+    "Executive":      340,   #  640 - 600
+    "Executive XL":   240,   #  640 - 600
+    "Normal":         100,
+}
+
 # GST-style tax applied on top of the seat subtotal at checkout.
-TAX_RATE = 0.20   # 20%
+TAX_RATE = 0.35   # 35%
 
 # Food & Beverage add-on catalog — offered alongside seat selection at checkout.
 ADDON_CATALOG = [
-    {"item_id": "popcorn_reg",   "name": "Popcorn (Regular)",     "price": 180, "icon": "🍿"},
-    {"item_id": "popcorn_large", "name": "Popcorn (Large)",       "price": 250, "icon": "🍿"},
-    {"item_id": "nachos",        "name": "Nachos & Cheese",       "price": 220, "icon": "🧀"},
-    {"item_id": "soft_drink",    "name": "Soft Drink (Large)",    "price": 150, "icon": "🥤"},
-    {"item_id": "combo",         "name": "Popcorn + Drink Combo", "price": 380, "icon": "🍿"},
-    {"item_id": "choc_bar",      "name": "Chocolate Bar",         "price": 120, "icon": "🍫"},
+    {"item_id": "popcorn_reg",   "name": "Popcorn (Regular)",     "price": 480, "icon": "🍿"},
+    {"item_id": "popcorn_large", "name": "Popcorn (Large)",       "price": 350, "icon": "🍿"},
+    {"item_id": "nachos",        "name": "Nachos & Cheese",       "price": 290, "icon": "🧀"},
+    {"item_id": "soft_drink",    "name": "Soft Drink (Large)",    "price": 250, "icon": "🥤"},
+    {"item_id": "combo",         "name": "Popcorn + Drink Combo", "price": 580, "icon": "🍿"},
+    {"item_id": "choc_bar",      "name": "Chocolate Bar",         "price": 150, "icon": "🍫"},
 ]
 ADDON_BY_ID = {a["item_id"]: a for a in ADDON_CATALOG}
 
@@ -68,13 +83,25 @@ MOVIE_CATALOG = [
 # How many days ahead showtimes are available for booking (today included)
 SHOW_WINDOW_DAYS = 7
 
-# Seat layout: (section_name, row_labels, num_cols, aisles_after_col_numbers)
-# 250 seats total: Front 4x14=56, Middle 6x16=96, Back 7x14=98
-# Shared across every cinema branch.
+# Seat layout: (tier_name, row_labels, num_cols, aisles_after_col_numbers)
+# 292 seats total, 15 rows (A nearest the screen, O farthest — matches a
+# real multiplex's usual pricing: back rows cost more). Shared across every
+# cinema branch.
+#   Recliner      (O,N)      2 rows x 10 = 20
+#   Premium Plus  (M-I)      5 rows x 20 = 100
+#   Premium XL    (H)        1 row  x 20 = 20
+#   Premium       (G-E)      3 rows x 24 = 72
+#   Executive     (D,C)      2 rows x 20 = 40
+#   Executive XL  (B)        1 row  x 20 = 20
+#   Normal        (A)        1 row  x 20 = 20
 SEAT_LAYOUT = [
-    ("Front",  ["A", "B", "C", "D"],                    14, [7]),
-    ("Middle", ["E", "F", "G", "H", "I", "J"],           16, [8]),
-    ("Back",   ["K", "L", "M", "N", "O", "P", "Q"],      14, [7]),
+    ("Recliner",     ["O", "N"],                10, [5]),
+    ("Premium Plus", ["M", "L", "K", "J", "I"],  20, [10]),
+    ("Premium XL",   ["H"],                      20, [10]),
+    ("Premium",       ["G", "F", "E"],           24, [12]),
+    ("Executive",     ["D", "C"],                20, [10]),
+    ("Executive XL",  ["B"],                     20, [10]),
+    ("Normal",        ["A"],                     20, [10]),
 ]
 
 # Built once at startup — maps every seat label to its section name
@@ -437,7 +464,7 @@ def build_seat_section_map():
 
 # ── Pricing ────────────────────────────────────────────────────────────────────
 def price_for_seat(ticket_type: str, seat: str) -> int:
-    section = SEAT_SECTION_MAP.get(seat, "Middle")
+    section = SEAT_SECTION_MAP.get(seat, "Normal")
     base    = BASE_PRICES.get(ticket_type, 0)
     mod     = SEAT_TIER_MOD.get(section, 0)
     return max(base + mod, MIN_SEAT_PRICE)
